@@ -13,7 +13,7 @@ It is safe for other plugins to inject and use the same CustomToast release. The
 - Info, success, warning, and error toast styles.
 - Rounded and square background options.
 - Automatic colors and every current Minecraft Bedrock formatting-code color.
-- Message-only notifications.
+- Optional icons and title-only or message-only notifications.
 - A title with a message containing one or more lines.
 - UTF-8 text, including Vietnamese.
 - Minecraft's optional built-in vanilla toast sound.
@@ -44,6 +44,8 @@ toast NhanAZ success round material_emerald Emerald reward
 toast NhanAZ warning square material_resin Resin warning
 toast NhanAZ info round light_blue Party notification
 toast NhanAZ info round blue 1 reward is ready.
+toast NhanAZ plain round dark_gray This message has no icon.
+toast NhanAZ plain square dark_aqua Title only\n
 toast NhanAZ success round green Daily rewards\nFirst reward\nSecond reward\n\nCome back tomorrow.
 toast all info round auto The event is now open!
 toastdebug NhanAZ
@@ -52,7 +54,7 @@ toastdebug NhanAZ
 Every command follows the same order:
 
 ```text
-toast <player|all> <type> <corner> <color> <message>
+toast <player|all> <plain|type> <corner> <color> <message>
 ```
 
 Use an online player name for one recipient, or use `all` for every online player.
@@ -65,14 +67,14 @@ Run the complete visual test from the console:
 toastdebug NhanAZ
 ```
 
-The suite sends 21 focused cases followed by an eight-toast stack burst. A Tip stays visible throughout the run and identifies the active group:
+The suite sends 24 focused cases followed by an eight-toast stack burst. A Tip stays visible throughout the run and identifies the active group:
 
 1. Appearance: toast types, corners, colors, Unicode, and sound.
 2. Number width A/B: equal-length title and message text beginning with a number or a letter.
-3. Text edge cases: message-only layout, repeated line breaks, an empty line, long text, and literal marker characters.
+3. Text edge cases: iconless title-only and message-only layouts, repeated line breaks, an empty line, ultra-long text, and literal marker characters.
 4. Stack stability: spacing and protection against textures swapping between queued items.
 
-The full run takes about 45 seconds. Avoid starting it a second time before the first run finishes.
+The full run takes about 52 seconds. Avoid starting it a second time before the first run finishes.
 
 ## Message-only and multi-line toasts
 
@@ -90,6 +92,16 @@ For a message-only toast, write the message normally:
 ```text
 toast NhanAZ info round auto You have a new friend request.
 ```
+
+Use `plain` instead of a type when the toast should not reserve or display an icon:
+
+```text
+toast NhanAZ plain round dark_gray This message has no icon.
+toast NhanAZ plain square dark_aqua Title only\n
+toast NhanAZ plain round blue Plain title\nPlain message.
+```
+
+The trailing `\n` in the second command intentionally creates a title with an empty message.
 
 For a title and a message, place the literal characters `\n` between them:
 
@@ -207,6 +219,17 @@ $this->customToast->send(
     null,
     null,
     ToastColor::GOLD
+);
+```
+
+Use the named `showIcon` argument for an iconless toast without changing its semantic type or automatic color:
+
+```php
+$this->customToast->send(
+    player: $player,
+    type: ToastType::SUCCESS,
+    message: "Daily reward claimed.",
+    showIcon: false
 );
 ```
 

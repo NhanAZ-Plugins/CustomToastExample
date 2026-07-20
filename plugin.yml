@@ -11,7 +11,7 @@ website: https://github.com/NhanAZ-Plugins/CustomToastExample
 commands:
   toast:
     description: Send a custom toast to one player or everyone
-    usage: "/toast <player|all> <type> <round|square> <color> [<title>\\n]<message>"
+    usage: "/toast <player|all> <plain|type> <round|square> <color> [<title>\\n]<message>"
     permission: customtoastexample.command.toast
   toastdebug:
     description: Run the local CustomToast visual test suite

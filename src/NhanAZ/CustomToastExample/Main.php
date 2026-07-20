@@ -52,7 +52,7 @@ final class Main extends PluginBase{
 			return;
 		}
 
-		$this->getLogger()->info("CustomToastExample is ready. Use 'toast <player|all> <type> <corner> <color> <message>' or 'toastdebug <player>'.");
+		$this->getLogger()->info("CustomToastExample is ready. Use 'toast <player|all> <plain|type> <corner> <color> <message>' or 'toastdebug <player>'.");
 	}
 
 	protected function onDisable() : void{
@@ -86,12 +86,12 @@ final class Main extends PluginBase{
 		}
 
 		$target = (string) array_shift($args);
-		$type = $this->parseType((string) array_shift($args));
+		[$type, $showIcon] = $this->parseType((string) array_shift($args));
 		$cornerStyle = $this->parseCornerStyle((string) array_shift($args));
 		$color = $this->parseColor((string) array_shift($args));
 		[$title, $message] = $this->parseText($args);
 		if(strtolower($target) === "all"){
-			$count = $this->customToast?->broadcast($type, $message, $title, null, $cornerStyle, $color) ?? 0;
+			$count = $this->customToast?->broadcast($type, $message, $title, null, $cornerStyle, $color, $showIcon) ?? 0;
 			$sender->sendMessage("Toast sent to {$count} player(s).");
 			return true;
 		}
@@ -102,7 +102,7 @@ final class Main extends PluginBase{
 			return true;
 		}
 
-		$this->customToast?->send($player, $type, $message, $title, null, $cornerStyle, $color);
+		$this->customToast?->send($player, $type, $message, $title, null, $cornerStyle, $color, $showIcon);
 		$sender->sendMessage("Toast sent to " . $player->getName() . ".");
 		return true;
 	}
@@ -120,7 +120,7 @@ final class Main extends PluginBase{
 			return true;
 		}
 
-		/** @var list<array{int, ToastType, ToastCornerStyle, ToastColor, ?string, string, bool}> $cases */
+		/** @var list<array{int, ToastType, ToastCornerStyle, ToastColor, ?string, string, bool, 7?: bool}> $cases */
 		$cases = [
 			[0, ToastType::INFO, ToastCornerStyle::ROUND, ToastColor::AUTO, null, "Message only • Unicode: Xin chào!", true],
 			[30, ToastType::SUCCESS, ToastCornerStyle::ROUND, ToastColor::AUTO, "SUCCESS • ROUND • AUTO", "Automatic success color", false],
@@ -143,28 +143,33 @@ final class Main extends PluginBase{
 			[570, ToastType::INFO, ToastCornerStyle::SQUARE, ToastColor::AQUA, null, "MESSAGE-ONLY: this toast has no title", false],
 			[600, ToastType::SUCCESS, ToastCornerStyle::ROUND, ToastColor::GREEN, "MULTI-LINE MESSAGE", "Line 1\nLine 2\nLine 3", false],
 			[630, ToastType::WARNING, ToastCornerStyle::SQUARE, ToastColor::GOLD, null, "Message line 1\n\nMessage line 3 after an empty line\nMessage line 4", false],
-			[720, ToastType::INFO, ToastCornerStyle::ROUND, ToastColor::BLUE, "STACK A", "Alternating texture", true],
-			[720, ToastType::SUCCESS, ToastCornerStyle::SQUARE, ToastColor::GREEN, "STACK B", "Alternating texture", false],
-			[720, ToastType::WARNING, ToastCornerStyle::ROUND, ToastColor::YELLOW, "STACK C", "Alternating texture", false],
-			[720, ToastType::ERROR, ToastCornerStyle::SQUARE, ToastColor::RED, "STACK D", "Alternating texture", false],
-			[720, ToastType::INFO, ToastCornerStyle::ROUND, ToastColor::AQUA, "STACK E", "Alternating texture", false],
-			[720, ToastType::SUCCESS, ToastCornerStyle::SQUARE, ToastColor::MATERIAL_EMERALD, "STACK F", "Alternating texture", false],
-			[720, ToastType::WARNING, ToastCornerStyle::ROUND, ToastColor::MATERIAL_GOLD, "STACK G", "Alternating texture", false],
-			[720, ToastType::ERROR, ToastCornerStyle::SQUARE, ToastColor::MATERIAL_AMETHYST, "STACK H", "Alternating texture", false]
+			[660, ToastType::INFO, ToastCornerStyle::ROUND, ToastColor::DARK_GRAY, "ICONLESS TITLE ONLY", "", false, false],
+			[690, ToastType::INFO, ToastCornerStyle::SQUARE, ToastColor::DARK_AQUA, null, "ICONLESS MESSAGE ONLY: the left padding should remain compact", false, false],
+			[720, ToastType::INFO, ToastCornerStyle::ROUND, ToastColor::LIGHT_BLUE, "ULTRA-LONG PARAGRAPH", "This deliberately oversized paragraph checks the maximum configured message length, UTF-8-safe truncation, screen-edge behavior, animation, and queue spacing when a toast contains far more ordinary words than a real notification should normally need. The ending may be truncated when max-message-bytes is smaller than this complete sentence, which is expected and must never split a UTF-8 character or crash the client.", false],
+			[840, ToastType::INFO, ToastCornerStyle::ROUND, ToastColor::BLUE, "STACK A", "Alternating texture", true],
+			[840, ToastType::SUCCESS, ToastCornerStyle::SQUARE, ToastColor::GREEN, "STACK B", "Alternating texture", false],
+			[840, ToastType::WARNING, ToastCornerStyle::ROUND, ToastColor::YELLOW, "STACK C", "Alternating texture", false],
+			[840, ToastType::ERROR, ToastCornerStyle::SQUARE, ToastColor::RED, "STACK D", "Alternating texture", false],
+			[840, ToastType::INFO, ToastCornerStyle::ROUND, ToastColor::AQUA, "STACK E", "Alternating texture", false],
+			[840, ToastType::SUCCESS, ToastCornerStyle::SQUARE, ToastColor::MATERIAL_EMERALD, "STACK F", "Alternating texture", false],
+			[840, ToastType::WARNING, ToastCornerStyle::ROUND, ToastColor::MATERIAL_GOLD, "STACK G", "Alternating texture", false],
+			[840, ToastType::ERROR, ToastCornerStyle::SQUARE, ToastColor::MATERIAL_AMETHYST, "STACK H", "Alternating texture", false]
 		];
 
-		foreach($cases as [$delayTicks, $type, $cornerStyle, $color, $title, $message, $playSound]){
-			$this->getScheduler()->scheduleDelayedTask(new ClosureTask(function() use ($player, $type, $cornerStyle, $color, $title, $message, $playSound) : void{
+		foreach($cases as $case){
+			[$delayTicks, $type, $cornerStyle, $color, $title, $message, $playSound] = $case;
+			$showIcon = $case[7] ?? true;
+			$this->getScheduler()->scheduleDelayedTask(new ClosureTask(function() use ($player, $type, $cornerStyle, $color, $title, $message, $playSound, $showIcon) : void{
 				if($player->isConnected() && $this->customToast !== null){
-					$this->customToast->send($player, $type, $message, $title, $playSound, $cornerStyle, $color);
+					$this->customToast->send($player, $type, $message, $title, $playSound, $cornerStyle, $color, $showIcon);
 				}
 			}), $delayTicks);
 		}
-		for($tick = 0; $tick <= 860; $tick += 20){
+		for($tick = 0; $tick <= 980; $tick += 20){
 			$tip = match(true){
 				$tick < 360 => "§bCustomToast Debug §8• §fGroup 1/4: Appearance\n§7Types, corners, colors, Unicode, and sound",
 				$tick < 480 => "§bCustomToast Debug §8• §fGroup 2/4: Number width A/B\n§7Compare equal-length number- and letter-leading text",
-				$tick < 720 => "§bCustomToast Debug §8• §fGroup 3/4: Text edge cases\n§7Message-only, multi-line, blank line, long text, and markers",
+				$tick < 840 => "§bCustomToast Debug §8• §fGroup 3/4: Text edge cases\n§7Iconless, title-only, multi-line, ultra-long text, and markers",
 				default => "§bCustomToast Debug §8• §fGroup 4/4: Stack stability\n§7Check spacing and verify that textures never swap"
 			};
 			$this->getScheduler()->scheduleDelayedTask(new ClosureTask(static function() use ($player, $tip) : void{
@@ -177,16 +182,23 @@ final class Main extends PluginBase{
 			if($player->isConnected()){
 				$player->sendTip("§aCustomToast debug complete");
 			}
-		}), 880);
+		}), 1000);
 
-		$sender->sendMessage("Scheduled 21 focused cases and an 8-item stack burst for " . $player->getName() . ". Tips identify each debug group.");
+		$sender->sendMessage("Scheduled 24 focused cases and an 8-item stack burst for " . $player->getName() . ". Tips identify each debug group.");
 		return true;
 	}
 
-	private function parseType(string $value) : ToastType{
-		return ToastType::fromName($value) ?? throw new InvalidArgumentException(
-			"Unknown toast type '{$value}'. Use info, success, warning, or error."
+	/** @return array{ToastType, bool} */
+	private function parseType(string $value) : array{
+		$value = strtolower($value);
+		if($value === "plain" || $value === "text" || $value === "none" || $value === "noicon" || $value === "no_icon"){
+			return [ToastType::INFO, false];
+		}
+
+		$type = ToastType::fromName($value) ?? throw new InvalidArgumentException(
+			"Unknown toast type '{$value}'. Use plain, info, success, warning, or error."
 		);
+		return [$type, true];
 	}
 
 	private function parseCornerStyle(string $value) : ToastCornerStyle{
