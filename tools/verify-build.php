@@ -128,7 +128,7 @@ $exampleSource = $phar["src/NhanAZ/CustomToastExample/Main.php"]->getContent();
 if(!str_contains($exampleSource, 'sendTip(') || !str_contains($exampleSource, "Group 5/5: Stack stability")){
 	throw new RuntimeException("Built plugin is missing guided toastdebug Tips");
 }
-foreach(["1BCD EFGH IJKL MNOP", "%toast% // and | must remain visible in content", "MESSAGE-ONLY: this toast has no title", '"Line 1\\nLine 2\\nLine 3"', "ICONLESS TITLE ONLY", "ICONLESS MESSAGE ONLY", "ULTRA-LONG PARAGRAPH", "COLORED TITLE", "COLORED MESSAGE", "FORMAT CODES", '"", "", "", "", "", "", "", "", "", "", "", "", "", ""', "Scheduled 27 focused cases, 14 glyph cases"] as $requiredDebugCase){
+foreach(["1BCD EFGH IJKL MNOP", "%toast% // and | must remain visible in content", "MESSAGE-ONLY: this toast has no title", '"Line 1\\nLine 2\\nLine 3"', "ICONLESS TITLE ONLY", "ICONLESS MESSAGE ONLY", "ULTRA-LONG PARAGRAPH", "COLORED TITLE", "COLORED MESSAGE", "FORMAT CODES", '"", "", "", "", "", "", "", "", "", "", "", "", "", ""', "DEBUG_TOAST_LIFETIME_TICKS = 145", "Each group starts after the previous group's toasts disappear"] as $requiredDebugCase){
 	if(!str_contains($exampleSource, $requiredDebugCase)){
 		throw new RuntimeException("Built plugin is missing a toastdebug regression case: " . $requiredDebugCase);
 	}

@@ -29,6 +29,9 @@ use function strtolower;
 use function trim;
 
 final class Main extends PluginBase{
+	private const DEBUG_TOAST_LIFETIME_TICKS = 145;
+	private const DEBUG_GROUP_GAP_TICKS = 35;
+
 	private ?CustomToast $customToast = null;
 
 	protected function onEnable() : void{
@@ -124,43 +127,52 @@ final class Main extends PluginBase{
 			return true;
 		}
 
+		// One toast lives for 145 ticks in the resource pack. Each group starts only
+		// after the previous group's final toast has disappeared, plus a small buffer.
+		$appearanceStartTicks = 0;
+		$numberStartTicks = $appearanceStartTicks + 300 + self::DEBUG_TOAST_LIFETIME_TICKS + self::DEBUG_GROUP_GAP_TICKS;
+		$textStartTicks = $numberStartTicks + 90 + self::DEBUG_TOAST_LIFETIME_TICKS + self::DEBUG_GROUP_GAP_TICKS;
+		$glyphStartTicks = $textStartTicks + 330 + self::DEBUG_TOAST_LIFETIME_TICKS + self::DEBUG_GROUP_GAP_TICKS;
+		$stackStartTicks = $glyphStartTicks + 390 + self::DEBUG_TOAST_LIFETIME_TICKS + self::DEBUG_GROUP_GAP_TICKS;
+		$debugCompleteTicks = $stackStartTicks + self::DEBUG_TOAST_LIFETIME_TICKS + self::DEBUG_GROUP_GAP_TICKS;
+
 		/** @var list<array{int, ToastType, ToastCornerStyle, ToastColor, ?string, string, bool, 7?: bool}> $cases */
 		$cases = [
-			[0, ToastType::INFO, ToastCornerStyle::ROUND, ToastColor::AUTO, null, "Message only ⁕ Unicode: Xin chào!", true],
-			[30, ToastType::SUCCESS, ToastCornerStyle::ROUND, ToastColor::AUTO, "SUCCESS ⁕ ROUND ⁕ AUTO", "Automatic success color", false],
-			[60, ToastType::WARNING, ToastCornerStyle::ROUND, ToastColor::AUTO, "WARNING ⁕ ROUND ⁕ AUTO", "Automatic warning color", false],
-			[90, ToastType::ERROR, ToastCornerStyle::ROUND, ToastColor::AUTO, "ERROR ⁕ ROUND ⁕ AUTO", "Automatic error color", false],
-			[120, ToastType::INFO, ToastCornerStyle::SQUARE, ToastColor::AUTO, "INFO ⁕ SQUARE ⁕ AUTO", "Automatic info color", false],
-			[150, ToastType::SUCCESS, ToastCornerStyle::SQUARE, ToastColor::NEUTRAL, "SUCCESS ⁕ SQUARE ⁕ NEUTRAL", "Neutral background", false],
-			[180, ToastType::WARNING, ToastCornerStyle::ROUND, ToastColor::BLACK, "WARNING ⁕ ROUND ⁕ BLACK", "Dark contrast check", false],
-			[210, ToastType::ERROR, ToastCornerStyle::SQUARE, ToastColor::WHITE, "ERROR ⁕ SQUARE ⁕ WHITE", "Light contrast check", false],
-			[240, ToastType::SUCCESS, ToastCornerStyle::ROUND, ToastColor::MATERIAL_EMERALD, "SUCCESS ⁕ ROUND ⁕ EMERALD", "Bedrock material color", false],
-			[270, ToastType::WARNING, ToastCornerStyle::SQUARE, ToastColor::MATERIAL_RESIN, "WARNING ⁕ SQUARE ⁕ RESIN", "Bedrock material color", false],
-			[300, ToastType::INFO, ToastCornerStyle::ROUND, ToastColor::LIGHT_BLUE, "INFO ⁕ ROUND ⁕ LIGHT BLUE", "Pipe stays visible: Rank A | Rank B", false],
-			[360, ToastType::INFO, ToastCornerStyle::ROUND, ToastColor::BLUE, null, "1BCD EFGH IJKL MNOP", false],
-			[390, ToastType::INFO, ToastCornerStyle::ROUND, ToastColor::BLUE, null, "ABCD EFGH IJKL MNOP", false],
-			[420, ToastType::INFO, ToastCornerStyle::ROUND, ToastColor::BLUE, "1BCD EFGH IJKL", "Same title-width control", false],
-			[450, ToastType::INFO, ToastCornerStyle::ROUND, ToastColor::BLUE, "ABCD EFGH IJKL", "Same title-width control", false],
-			[480, ToastType::INFO, ToastCornerStyle::SQUARE, ToastColor::DARK_AQUA, "LONG SPACED TEXT", "This checks a long sentence with ordinary spaces near the screen edge.", false],
-			[510, ToastType::INFO, ToastCornerStyle::SQUARE, ToastColor::DARK_PURPLE, "LONG UNBROKEN TEXT", "1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz", false],
-			[540, ToastType::INFO, ToastCornerStyle::ROUND, ToastColor::GOLD, "LITERAL MARKERS", "%toast% // and | must remain visible in content", false],
-			[570, ToastType::INFO, ToastCornerStyle::SQUARE, ToastColor::AQUA, null, "MESSAGE-ONLY: this toast has no title", false],
-			[600, ToastType::SUCCESS, ToastCornerStyle::ROUND, ToastColor::GREEN, "MULTI-LINE MESSAGE", "Line 1\nLine 2\nLine 3", false],
-			[630, ToastType::WARNING, ToastCornerStyle::SQUARE, ToastColor::GOLD, null, "Message line 1\n\nMessage line 3 after an empty line\nMessage line 4", false],
-			[660, ToastType::INFO, ToastCornerStyle::ROUND, ToastColor::DARK_GRAY, "ICONLESS TITLE ONLY", "", false, false],
-			[690, ToastType::INFO, ToastCornerStyle::SQUARE, ToastColor::DARK_AQUA, null, "ICONLESS MESSAGE ONLY: the left padding should remain compact", false, false],
-			[720, ToastType::INFO, ToastCornerStyle::ROUND, ToastColor::LIGHT_BLUE, "ULTRA-LONG PARAGRAPH", "This deliberately oversized paragraph checks the maximum configured message length, UTF-8-safe truncation, screen-edge behavior, animation, and queue spacing when a toast contains far more ordinary words than a real notification should normally need. The ending may be truncated when max-message-bytes is smaller than this complete sentence, which is expected and must never split a UTF-8 character or crash the client.", false],
-			[750, ToastType::INFO, ToastCornerStyle::SQUARE, ToastColor::DARK_GRAY, "§cCOLORED TITLE", "The title is red while this message is reset", false],
-			[780, ToastType::INFO, ToastCornerStyle::ROUND, ToastColor::DARK_GRAY, "COLORED MESSAGE", "§aGreen §bAqua §eYellow §dLight purple §rDefault", false],
-			[810, ToastType::INFO, ToastCornerStyle::SQUARE, ToastColor::DARK_GRAY, "FORMAT CODES §kMAGIC§r", "§iMaterial iron §rReset §kObfuscated§r visible again", false],
-			[1380, ToastType::INFO, ToastCornerStyle::ROUND, ToastColor::BLUE, "STACK A", "Alternating texture", true],
-			[1380, ToastType::SUCCESS, ToastCornerStyle::SQUARE, ToastColor::GREEN, "STACK B", "Alternating texture", false],
-			[1380, ToastType::WARNING, ToastCornerStyle::ROUND, ToastColor::YELLOW, "STACK C", "Alternating texture", false],
-			[1380, ToastType::ERROR, ToastCornerStyle::SQUARE, ToastColor::RED, "STACK D", "Alternating texture", false],
-			[1380, ToastType::INFO, ToastCornerStyle::ROUND, ToastColor::AQUA, "STACK E", "Alternating texture", false],
-			[1380, ToastType::SUCCESS, ToastCornerStyle::SQUARE, ToastColor::MATERIAL_EMERALD, "STACK F", "Alternating texture", false],
-			[1380, ToastType::WARNING, ToastCornerStyle::ROUND, ToastColor::MATERIAL_GOLD, "STACK G", "Alternating texture", false],
-			[1380, ToastType::ERROR, ToastCornerStyle::SQUARE, ToastColor::MATERIAL_AMETHYST, "STACK H", "Alternating texture", false]
+			[$appearanceStartTicks, ToastType::INFO, ToastCornerStyle::ROUND, ToastColor::AUTO, null, "Message only ⁕ Unicode: Xin chào!", true],
+			[$appearanceStartTicks + 30, ToastType::SUCCESS, ToastCornerStyle::ROUND, ToastColor::AUTO, "SUCCESS ⁕ ROUND ⁕ AUTO", "Automatic success color", false],
+			[$appearanceStartTicks + 60, ToastType::WARNING, ToastCornerStyle::ROUND, ToastColor::AUTO, "WARNING ⁕ ROUND ⁕ AUTO", "Automatic warning color", false],
+			[$appearanceStartTicks + 90, ToastType::ERROR, ToastCornerStyle::ROUND, ToastColor::AUTO, "ERROR ⁕ ROUND ⁕ AUTO", "Automatic error color", false],
+			[$appearanceStartTicks + 120, ToastType::INFO, ToastCornerStyle::SQUARE, ToastColor::AUTO, "INFO ⁕ SQUARE ⁕ AUTO", "Automatic info color", false],
+			[$appearanceStartTicks + 150, ToastType::SUCCESS, ToastCornerStyle::SQUARE, ToastColor::NEUTRAL, "SUCCESS ⁕ SQUARE ⁕ NEUTRAL", "Neutral background", false],
+			[$appearanceStartTicks + 180, ToastType::WARNING, ToastCornerStyle::ROUND, ToastColor::BLACK, "WARNING ⁕ ROUND ⁕ BLACK", "Dark contrast check", false],
+			[$appearanceStartTicks + 210, ToastType::ERROR, ToastCornerStyle::SQUARE, ToastColor::WHITE, "ERROR ⁕ SQUARE ⁕ WHITE", "Light contrast check", false],
+			[$appearanceStartTicks + 240, ToastType::SUCCESS, ToastCornerStyle::ROUND, ToastColor::MATERIAL_EMERALD, "SUCCESS ⁕ ROUND ⁕ EMERALD", "Bedrock material color", false],
+			[$appearanceStartTicks + 270, ToastType::WARNING, ToastCornerStyle::SQUARE, ToastColor::MATERIAL_RESIN, "WARNING ⁕ SQUARE ⁕ RESIN", "Bedrock material color", false],
+			[$appearanceStartTicks + 300, ToastType::INFO, ToastCornerStyle::ROUND, ToastColor::LIGHT_BLUE, "INFO ⁕ ROUND ⁕ LIGHT BLUE", "Pipe stays visible: Rank A | Rank B", false],
+			[$numberStartTicks, ToastType::INFO, ToastCornerStyle::ROUND, ToastColor::BLUE, null, "1BCD EFGH IJKL MNOP", false],
+			[$numberStartTicks + 30, ToastType::INFO, ToastCornerStyle::ROUND, ToastColor::BLUE, null, "ABCD EFGH IJKL MNOP", false],
+			[$numberStartTicks + 60, ToastType::INFO, ToastCornerStyle::ROUND, ToastColor::BLUE, "1BCD EFGH IJKL", "Same title-width control", false],
+			[$numberStartTicks + 90, ToastType::INFO, ToastCornerStyle::ROUND, ToastColor::BLUE, "ABCD EFGH IJKL", "Same title-width control", false],
+			[$textStartTicks, ToastType::INFO, ToastCornerStyle::SQUARE, ToastColor::DARK_AQUA, "LONG SPACED TEXT", "This checks a long sentence with ordinary spaces near the screen edge.", false],
+			[$textStartTicks + 30, ToastType::INFO, ToastCornerStyle::SQUARE, ToastColor::DARK_PURPLE, "LONG UNBROKEN TEXT", "1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz", false],
+			[$textStartTicks + 60, ToastType::INFO, ToastCornerStyle::ROUND, ToastColor::GOLD, "LITERAL MARKERS", "%toast% // and | must remain visible in content", false],
+			[$textStartTicks + 90, ToastType::INFO, ToastCornerStyle::SQUARE, ToastColor::AQUA, null, "MESSAGE-ONLY: this toast has no title", false],
+			[$textStartTicks + 120, ToastType::SUCCESS, ToastCornerStyle::ROUND, ToastColor::GREEN, "MULTI-LINE MESSAGE", "Line 1\nLine 2\nLine 3", false],
+			[$textStartTicks + 150, ToastType::WARNING, ToastCornerStyle::SQUARE, ToastColor::GOLD, null, "Message line 1\n\nMessage line 3 after an empty line\nMessage line 4", false],
+			[$textStartTicks + 180, ToastType::INFO, ToastCornerStyle::ROUND, ToastColor::DARK_GRAY, "ICONLESS TITLE ONLY", "", false, false],
+			[$textStartTicks + 210, ToastType::INFO, ToastCornerStyle::SQUARE, ToastColor::DARK_AQUA, null, "ICONLESS MESSAGE ONLY: the left padding should remain compact", false, false],
+			[$textStartTicks + 240, ToastType::INFO, ToastCornerStyle::ROUND, ToastColor::LIGHT_BLUE, "ULTRA-LONG PARAGRAPH", "This deliberately oversized paragraph checks the maximum configured message length, UTF-8-safe truncation, screen-edge behavior, animation, and queue spacing when a toast contains far more ordinary words than a real notification should normally need. The ending may be truncated when max-message-bytes is smaller than this complete sentence, which is expected and must never split a UTF-8 character or crash the client.", false],
+			[$textStartTicks + 270, ToastType::INFO, ToastCornerStyle::SQUARE, ToastColor::DARK_GRAY, "§cCOLORED TITLE", "The title is red while this message is reset", false],
+			[$textStartTicks + 300, ToastType::INFO, ToastCornerStyle::ROUND, ToastColor::DARK_GRAY, "COLORED MESSAGE", "§aGreen §bAqua §eYellow §dLight purple §rDefault", false],
+			[$textStartTicks + 330, ToastType::INFO, ToastCornerStyle::SQUARE, ToastColor::DARK_GRAY, "FORMAT CODES §kMAGIC§r", "§iMaterial iron §rReset §kObfuscated§r visible again", false],
+			[$stackStartTicks, ToastType::INFO, ToastCornerStyle::ROUND, ToastColor::BLUE, "STACK A", "Alternating texture", true],
+			[$stackStartTicks, ToastType::SUCCESS, ToastCornerStyle::SQUARE, ToastColor::GREEN, "STACK B", "Alternating texture", false],
+			[$stackStartTicks, ToastType::WARNING, ToastCornerStyle::ROUND, ToastColor::YELLOW, "STACK C", "Alternating texture", false],
+			[$stackStartTicks, ToastType::ERROR, ToastCornerStyle::SQUARE, ToastColor::RED, "STACK D", "Alternating texture", false],
+			[$stackStartTicks, ToastType::INFO, ToastCornerStyle::ROUND, ToastColor::AQUA, "STACK E", "Alternating texture", false],
+			[$stackStartTicks, ToastType::SUCCESS, ToastCornerStyle::SQUARE, ToastColor::MATERIAL_EMERALD, "STACK F", "Alternating texture", false],
+			[$stackStartTicks, ToastType::WARNING, ToastCornerStyle::ROUND, ToastColor::MATERIAL_GOLD, "STACK G", "Alternating texture", false],
+			[$stackStartTicks, ToastType::ERROR, ToastCornerStyle::SQUARE, ToastColor::MATERIAL_AMETHYST, "STACK H", "Alternating texture", false]
 		];
 
 		foreach($cases as $case){
@@ -175,7 +187,7 @@ final class Main extends PluginBase{
 
 		$glyphs = ["", "", "", "", "", "", "", "", "", "", "", "", "", ""];
 		foreach($glyphs as $index => $glyph){
-			$delayTicks = 900 + ($index * 30);
+			$delayTicks = $glyphStartTicks + ($index * 30);
 			$cornerStyle = $index % 2 === 0 ? ToastCornerStyle::ROUND : ToastCornerStyle::SQUARE;
 			$title = sprintf("GLYPH U+E1%02X", $index);
 			$message = "Minecraft default glyph " . ($index + 1) . "/14";
@@ -186,12 +198,12 @@ final class Main extends PluginBase{
 			}), $delayTicks);
 		}
 
-		for($tick = 0; $tick <= 1520; $tick += 20){
+		for($tick = 0; $tick < $debugCompleteTicks; $tick += 20){
 			$tip = match(true){
-				$tick < 360 => "§bCustomToast Debug §8⁕ §fGroup 1/5: Appearance\n§7Types, corners, colors, Unicode, and sound",
-				$tick < 480 => "§bCustomToast Debug §8⁕ §fGroup 2/5: Number width A/B\n§7Compare equal-length number- and letter-leading text",
-				$tick < 900 => "§bCustomToast Debug §8⁕ §fGroup 3/5: Text and formatting\n§7Iconless, long text, §kmagic§r§7, §iiron§r§7, reset, and colors",
-				$tick < 1380 => "§bCustomToast Debug §8⁕ §fGroup 4/5: Unicode glyph icons\n§7Testing Minecraft defaults U+E100 through U+E10D",
+				$tick < $numberStartTicks => "§bCustomToast Debug §8⁕ §fGroup 1/5: Appearance\n§7Types, corners, colors, Unicode, and sound",
+				$tick < $textStartTicks => "§bCustomToast Debug §8⁕ §fGroup 2/5: Number width A/B\n§7Compare equal-length number- and letter-leading text",
+				$tick < $glyphStartTicks => "§bCustomToast Debug §8⁕ §fGroup 3/5: Text and formatting\n§7Iconless, long text, §kmagic§r§7, §iiron§r§7, reset, and colors",
+				$tick < $stackStartTicks => "§bCustomToast Debug §8⁕ §fGroup 4/5: Unicode glyph icons\n§7Testing Minecraft defaults U+E100 through U+E10D",
 				default => "§bCustomToast Debug §8⁕ §fGroup 5/5: Stack stability\n§7Check spacing and verify that textures never swap"
 			};
 			$this->getScheduler()->scheduleDelayedTask(new ClosureTask(static function() use ($player, $tip) : void{
@@ -204,9 +216,9 @@ final class Main extends PluginBase{
 			if($player->isConnected()){
 				$player->sendTip("§aCustomToast debug complete");
 			}
-		}), 1540);
+		}), $debugCompleteTicks);
 
-		$sender->sendMessage("Scheduled 27 focused cases, 14 glyph cases, and an 8-item stack burst for " . $player->getName() . ". Tips identify each debug group.");
+		$sender->sendMessage("Scheduled five isolated debug groups for " . $player->getName() . ". Each group starts after the previous group's toasts disappear.");
 		return true;
 	}
 

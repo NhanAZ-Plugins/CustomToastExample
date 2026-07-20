@@ -70,7 +70,7 @@ Run the complete visual test from the console:
 toastdebug NhanAZ
 ```
 
-The suite sends 27 focused cases, all 14 Minecraft default private-use glyphs, and an eight-toast stack burst. A Tip stays visible throughout the run and identifies the active group:
+The suite sends 27 focused cases, all 14 Minecraft default private-use glyphs, and an eight-toast stack burst. A Tip stays visible throughout the run and identifies the active group. Every group waits until the previous group's final toast has completely disappeared before it starts:
 
 1. Appearance: toast types, corners, colors, Unicode, and sound.
 2. Number width A/B: equal-length title and message text beginning with a number or a letter.
@@ -78,7 +78,7 @@ The suite sends 27 focused cases, all 14 Minecraft default private-use glyphs, a
 4. Unicode glyph icons: `U+E100` through `U+E10D` in both corner styles.
 5. Stack stability: spacing and protection against textures swapping between queued items.
 
-The full run takes about 78 seconds. Avoid starting it a second time before the first run finishes.
+The full run takes about 101 seconds. Avoid starting it a second time before the first run finishes.
 
 ## Message-only and multi-line toasts
 
