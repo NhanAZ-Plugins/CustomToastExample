@@ -140,14 +140,17 @@ final class Main extends PluginBase{
 			[480, ToastType::INFO, ToastCornerStyle::SQUARE, ToastColor::DARK_AQUA, "LONG SPACED TEXT", "This checks a long sentence with ordinary spaces near the screen edge.", false],
 			[510, ToastType::INFO, ToastCornerStyle::SQUARE, ToastColor::DARK_PURPLE, "LONG UNBROKEN TEXT", "1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz", false],
 			[540, ToastType::INFO, ToastCornerStyle::ROUND, ToastColor::GOLD, "LITERAL MARKERS", "%toast% // and | must remain visible in content", false],
-			[600, ToastType::INFO, ToastCornerStyle::ROUND, ToastColor::BLUE, "STACK A", "Alternating texture", true],
-			[600, ToastType::SUCCESS, ToastCornerStyle::SQUARE, ToastColor::GREEN, "STACK B", "Alternating texture", false],
-			[600, ToastType::WARNING, ToastCornerStyle::ROUND, ToastColor::YELLOW, "STACK C", "Alternating texture", false],
-			[600, ToastType::ERROR, ToastCornerStyle::SQUARE, ToastColor::RED, "STACK D", "Alternating texture", false],
-			[600, ToastType::INFO, ToastCornerStyle::ROUND, ToastColor::AQUA, "STACK E", "Alternating texture", false],
-			[600, ToastType::SUCCESS, ToastCornerStyle::SQUARE, ToastColor::MATERIAL_EMERALD, "STACK F", "Alternating texture", false],
-			[600, ToastType::WARNING, ToastCornerStyle::ROUND, ToastColor::MATERIAL_GOLD, "STACK G", "Alternating texture", false],
-			[600, ToastType::ERROR, ToastCornerStyle::SQUARE, ToastColor::MATERIAL_AMETHYST, "STACK H", "Alternating texture", false]
+			[570, ToastType::INFO, ToastCornerStyle::SQUARE, ToastColor::AQUA, null, "MESSAGE-ONLY: this toast has no title", false],
+			[600, ToastType::SUCCESS, ToastCornerStyle::ROUND, ToastColor::GREEN, "MULTI-LINE MESSAGE", "Line 1\nLine 2\nLine 3", false],
+			[630, ToastType::WARNING, ToastCornerStyle::SQUARE, ToastColor::GOLD, null, "Message line 1\n\nMessage line 3 after an empty line\nMessage line 4", false],
+			[720, ToastType::INFO, ToastCornerStyle::ROUND, ToastColor::BLUE, "STACK A", "Alternating texture", true],
+			[720, ToastType::SUCCESS, ToastCornerStyle::SQUARE, ToastColor::GREEN, "STACK B", "Alternating texture", false],
+			[720, ToastType::WARNING, ToastCornerStyle::ROUND, ToastColor::YELLOW, "STACK C", "Alternating texture", false],
+			[720, ToastType::ERROR, ToastCornerStyle::SQUARE, ToastColor::RED, "STACK D", "Alternating texture", false],
+			[720, ToastType::INFO, ToastCornerStyle::ROUND, ToastColor::AQUA, "STACK E", "Alternating texture", false],
+			[720, ToastType::SUCCESS, ToastCornerStyle::SQUARE, ToastColor::MATERIAL_EMERALD, "STACK F", "Alternating texture", false],
+			[720, ToastType::WARNING, ToastCornerStyle::ROUND, ToastColor::MATERIAL_GOLD, "STACK G", "Alternating texture", false],
+			[720, ToastType::ERROR, ToastCornerStyle::SQUARE, ToastColor::MATERIAL_AMETHYST, "STACK H", "Alternating texture", false]
 		];
 
 		foreach($cases as [$delayTicks, $type, $cornerStyle, $color, $title, $message, $playSound]){
@@ -157,11 +160,11 @@ final class Main extends PluginBase{
 				}
 			}), $delayTicks);
 		}
-		for($tick = 0; $tick <= 740; $tick += 20){
+		for($tick = 0; $tick <= 860; $tick += 20){
 			$tip = match(true){
 				$tick < 360 => "§bCustomToast Debug §8• §fGroup 1/4: Appearance\n§7Types, corners, colors, Unicode, and sound",
 				$tick < 480 => "§bCustomToast Debug §8• §fGroup 2/4: Number width A/B\n§7Compare equal-length number- and letter-leading text",
-				$tick < 600 => "§bCustomToast Debug §8• §fGroup 3/4: Text edge cases\n§7Long spaced, unbroken, and literal marker content",
+				$tick < 720 => "§bCustomToast Debug §8• §fGroup 3/4: Text edge cases\n§7Message-only, multi-line, blank line, long text, and markers",
 				default => "§bCustomToast Debug §8• §fGroup 4/4: Stack stability\n§7Check spacing and verify that textures never swap"
 			};
 			$this->getScheduler()->scheduleDelayedTask(new ClosureTask(static function() use ($player, $tip) : void{
@@ -174,9 +177,9 @@ final class Main extends PluginBase{
 			if($player->isConnected()){
 				$player->sendTip("§aCustomToast debug complete");
 			}
-		}), 760);
+		}), 880);
 
-		$sender->sendMessage("Scheduled 18 focused cases and an 8-item stack burst for " . $player->getName() . ". Tips identify each debug group.");
+		$sender->sendMessage("Scheduled 21 focused cases and an 8-item stack burst for " . $player->getName() . ". Tips identify each debug group.");
 		return true;
 	}
 

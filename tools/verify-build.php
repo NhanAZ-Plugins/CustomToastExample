@@ -84,6 +84,16 @@ $customToastSource = $phar["src/NhanAZ/CustomToast/CustomToast.php"]->getContent
 if(!str_contains($customToastSource, 'private const SOUND_NAME = "random.toast";')){
 	throw new RuntimeException("Injected library does not use the built-in random.toast sound event");
 }
+$toastPayloadSource = $phar["src/NhanAZ/CustomToast/ToastPayload.php"]->getContent();
+if(!str_contains($toastPayloadSource, "normaliseMessage") || !str_contains($toastPayloadSource, 'str_replace(["\\r\\n", "\\r"], "\\n", $text)')){
+	throw new RuntimeException("Injected library does not preserve message line breaks");
+}
+$hudSource = $phar["resources/CustomToast/ui/hud_screen.json"]->getContent();
+foreach(['"size": ["100%", "100%c"]', '"100%cm + 8px"', "('§r' + (#text - ('%.12s' * #text)))"] as $requiredHudFragment){
+	if(!str_contains($hudSource, $requiredHudFragment)){
+		throw new RuntimeException("Injected HUD is missing a text hotfix: " . $requiredHudFragment);
+	}
+}
 if(isset($phar["resources/CustomToast/sounds/sound_definitions.json"]) || isset($phar["resources/CustomToast/sounds/sfx/toast.ogg"])){
 	throw new RuntimeException("Build contains obsolete custom sound assets");
 }
@@ -111,6 +121,11 @@ foreach($forbiddenPrototypeIconHashes as $iconName => $forbiddenHash){
 $exampleSource = $phar["src/NhanAZ/CustomToastExample/Main.php"]->getContent();
 if(!str_contains($exampleSource, 'sendTip(') || !str_contains($exampleSource, "Group 4/4: Stack stability")){
 	throw new RuntimeException("Built plugin is missing guided toastdebug Tips");
+}
+foreach(["MESSAGE-ONLY: this toast has no title", '"Line 1\\nLine 2\\nLine 3"', "Scheduled 21 focused cases"] as $requiredDebugCase){
+	if(!str_contains($exampleSource, $requiredDebugCase)){
+		throw new RuntimeException("Built plugin is missing a toastdebug regression case: " . $requiredDebugCase);
+	}
 }
 
 echo "Build verification passed: PHP library and resource pack are both injected." . PHP_EOL;

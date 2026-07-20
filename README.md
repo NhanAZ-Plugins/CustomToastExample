@@ -14,7 +14,7 @@ It is safe for other plugins to inject and use the same CustomToast release. The
 - Rounded and square background options.
 - Automatic colors and every current Minecraft Bedrock formatting-code color.
 - Message-only notifications.
-- A title and message on separate lines.
+- A title with a message containing one or more lines.
 - UTF-8 text, including Vietnamese.
 - Minecraft's optional built-in vanilla toast sound.
 - Sending to one player or everyone online.
@@ -43,6 +43,8 @@ toast NhanAZ info square dark_blue Dark blue uses Minecraft code 1.
 toast NhanAZ success round material_emerald Emerald reward
 toast NhanAZ warning square material_resin Resin warning
 toast NhanAZ info round light_blue Party notification
+toast NhanAZ info round blue 1 reward is ready.
+toast NhanAZ success round green Daily rewards\nFirst reward\nSecond reward\n\nCome back tomorrow.
 toast all info round auto The event is now open!
 toastdebug NhanAZ
 ```
@@ -63,16 +65,16 @@ Run the complete visual test from the console:
 toastdebug NhanAZ
 ```
 
-The suite sends 18 focused cases followed by an eight-toast stack burst. A Tip stays visible throughout the run and identifies the active group:
+The suite sends 21 focused cases followed by an eight-toast stack burst. A Tip stays visible throughout the run and identifies the active group:
 
 1. Appearance: toast types, corners, colors, Unicode, and sound.
-2. Number width A/B: equal-length text beginning with a number or a letter.
-3. Text edge cases: long spaced text, long unbroken text, and literal marker characters.
+2. Number width A/B: equal-length title and message text beginning with a number or a letter.
+3. Text edge cases: message-only layout, repeated line breaks, an empty line, long text, and literal marker characters.
 4. Stack stability: spacing and protection against textures swapping between queued items.
 
-The full run takes about 38 seconds. Avoid starting it a second time before the first run finishes.
+The full run takes about 45 seconds. Avoid starting it a second time before the first run finishes.
 
-## Message-only and two-line toasts
+## Message-only and multi-line toasts
 
 Choose `round` or `square`, followed by a color name. Everything after the color is treated as toast text:
 
@@ -95,7 +97,19 @@ For a title and a message, place the literal characters `\n` between them:
 toast NhanAZ warning round yellow Warning\nThe server will restart in 5 minutes.
 ```
 
-The example plugin converts the first `\n` into the toast's two fields. The pipe character `|` is not a separator; it remains visible in the message. This means a message such as `Rank A | Rank B` works exactly as written.
+Additional `\n` sequences stay inside the message, including repeated sequences that create an empty line:
+
+```text
+toast NhanAZ success round green Daily rewards\nFirst reward\nSecond reward\n\nCome back tomorrow.
+```
+
+Start the text with `\n` when you want a multi-line message without a title:
+
+```text
+toast NhanAZ info square aqua \nLine one\n\nLine three after an empty line.
+```
+
+The example plugin converts the first `\n` into the title/message boundary and preserves every later line break in the message. The pipe character `|` is not a separator; it remains visible in the message. This means a message such as `Rank A | Rank B` works exactly as written.
 
 ## Configuration
 
