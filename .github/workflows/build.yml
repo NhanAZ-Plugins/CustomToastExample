@@ -1,0 +1,65 @@
+name: Build
+
+on:
+  push:
+    branches: [main, non-dev]
+    tags: ["v*"]
+  pull_request:
+    branches: [main, non-dev]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.2"
+          extensions: mbstring, zip
+          ini-values: phar.readonly=0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+
+      - name: Install Pockgin CLI
+        run: |
+          git clone https://github.com/pockgin/cli.git /tmp/pockgin-cli
+          cd /tmp/pockgin-cli
+          npm install
+
+      - name: Validate Composer metadata
+        run: composer validate --strict --no-check-publish
+
+      - name: Lint PHP sources
+        run: find src tools -name '*.php' -print0 | xargs -0 -n1 php -l
+
+      - name: Validate plugin
+        run: node /tmp/pockgin-cli/bin/pockgin.js validate .
+
+      - name: Build plugin with injected CustomToast
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node /tmp/pockgin-cli/bin/pockgin.js build .
+
+      - name: Verify injected library and resources
+        run: php tools/verify-build.php dist/CustomToastExample.phar
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: CustomToastExample-1.0.0
+          path: dist/CustomToastExample.phar
+
+      - name: Publish tagged release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/CustomToastExample.phar

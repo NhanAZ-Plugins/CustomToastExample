@@ -1,0 +1,17 @@
+{
+  "name": "nhanaz/customtoast-example",
+  "type": "project",
+  "description": "A friendly demonstration plugin for the CustomToast PocketMine-MP virion",
+  "license": "LGPL-3.0-or-later",
+  "require": {
+    "php": "^8.1",
+    "ext-mbstring": "*",
+    "ext-zip": "*",
+    "pocketmine/pocketmine-mp": "^5.0.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "NhanAZ\\CustomToastExample\\": "src/NhanAZ/CustomToastExample/"
+    }
+  }
+}

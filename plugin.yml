@@ -1,0 +1,25 @@
+---
+name: CustomToastExample
+version: 1.0.0
+main: NhanAZ\CustomToastExample\Main
+api: [5.0.0]
+load: STARTUP
+author: NhanAZ
+description: A friendly demonstration plugin for the CustomToast virion
+website: https://github.com/NhanAZ-Plugins/CustomToastExample
+
+commands:
+  toast:
+    description: Send a custom toast to one player or everyone
+    usage: "/toast <player|all> <type> <round|square> <color> [<title>\\n]<message>"
+    permission: customtoastexample.command.toast
+  toastdebug:
+    description: Run the local CustomToast visual test suite
+    usage: "/toastdebug <player>"
+    permission: customtoastexample.command.toastdebug
+permissions:
+  customtoastexample.command.toast:
+    default: op
+  customtoastexample.command.toastdebug:
+    default: op
+...

@@ -1,0 +1,13 @@
+libs:
+  - id: customtoast
+    repo: NhanAZ-Libraries/CustomToast
+    version: ^1.0.0
+    target: src/NhanAZ/CustomToast
+    src_path: src/NhanAZ/CustomToast
+
+  - id: customtoast-resources
+    repo: NhanAZ-Libraries/CustomToast
+    version: ^1.0.0
+    target: resources/CustomToast
+    src_path: resources/CustomToast
+

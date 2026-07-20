@@ -1,0 +1,8 @@
+# Players who refuse the resource pack cannot join when this is true.
+force-resource-pack: true
+
+# Play Minecraft Bedrock's built-in vanilla toast sound by default.
+play-sound: true
+
+# Maximum UTF-8 byte length of the message line.
+max-message-bytes: 256
