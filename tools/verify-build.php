@@ -95,10 +95,13 @@ if(!str_contains($toastPayloadSource, 'strtoupper($type->value)') || !str_contai
 	throw new RuntimeException("Injected library does not encode icon modes, validate glyphs, and bold titles");
 }
 $hudSource = $phar["resources/CustomToast/ui/hud_screen.json"]->getContent();
-foreach(['"size": ["100%", "100%c"]', '"100%cm + 8px"', "('%.' + \$toast_text_prefix_length + 's') * #text", '"round_without_icon@hud.custom_toast_variant"', '"round_with_glyph@hud.custom_toast_variant"', '"visible": "$toast_has_icon"', '"visible": "$toast_has_glyph"', '"target_property_name": "#toast_glyph"', '"offset": "$toast_text_offset"'] as $requiredHudFragment){
+foreach(['"size": ["100%", "100%c"]', '"100%cm + 8px"', "(('§r' + #text) - ('%.12s' * #text))", "(('%.12s' * #text) - ('%.11s' * #text))", '"round_without_icon@hud.custom_toast_variant"', '"round_with_glyph@hud.custom_toast_variant"', '"visible": "$toast_has_icon"', '"visible": "$toast_has_glyph"', '"target_property_name": "#toast_glyph"', '"offset": "$toast_text_offset"'] as $requiredHudFragment){
 	if(!str_contains($hudSource, $requiredHudFragment)){
 		throw new RuntimeException("Injected HUD is missing a text hotfix: " . $requiredHudFragment);
 	}
+}
+if(str_contains($hudSource, '$toast_text_prefix_length') || str_contains($hudSource, "('%.' +")){
+	throw new RuntimeException("Injected HUD contains a client-unsafe dynamic prefix formatter");
 }
 if(isset($phar["resources/CustomToast/sounds/sound_definitions.json"]) || isset($phar["resources/CustomToast/sounds/sfx/toast.ogg"])){
 	throw new RuntimeException("Build contains obsolete custom sound assets");
