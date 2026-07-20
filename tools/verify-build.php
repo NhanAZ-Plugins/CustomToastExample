@@ -91,14 +91,19 @@ $toastPayloadSource = $phar["src/NhanAZ/CustomToast/ToastPayload.php"]->getConte
 if(!str_contains($toastPayloadSource, "normaliseMessage") || !str_contains($toastPayloadSource, 'str_replace(["\\r\\n", "\\r"], "\\n", $text)')){
 	throw new RuntimeException("Injected library does not preserve message line breaks");
 }
-if(!str_contains($toastPayloadSource, 'strtoupper($type->value)') || !str_contains($toastPayloadSource, 'mb_strlen($glyph, "UTF-8")') || !str_contains($toastPayloadSource, '"§l" . $title . "§r"')){
+if(!str_contains($toastPayloadSource, 'strtoupper($type->value)') || !str_contains($toastPayloadSource, 'mb_strlen($glyph, "UTF-8")') || !str_contains($toastPayloadSource, 'strlen($glyph) !== 3') || !str_contains($toastPayloadSource, '"§l" . $title . "§r"')){
 	throw new RuntimeException("Injected library does not encode icon modes, validate glyphs, and bold titles");
 }
 $hudSource = $phar["resources/CustomToast/ui/hud_screen.json"]->getContent();
-foreach(['"size": ["100%", "100%c"]', '"100%cm + 8px"', "(('§r' + #text) - ('%.12s' * #text))", "(('%.12s' * #text) - ('%.11s' * #text))", '"round_without_icon@hud.custom_toast_variant"', '"round_with_glyph@hud.custom_toast_variant"', '"visible": "$toast_has_icon"', '"visible": "$toast_has_glyph"', '"target_property_name": "#toast_glyph"', '"offset": "$toast_text_offset"'] as $requiredHudFragment){
+foreach(['"size": ["100%", "100%c"]', '"100%cm + 8px"', "(('§r' + #text) - ('%.12s' * #text))", "(('§r' + #text) - ('%.14s' * #text))", "(('%.14s' * #text) - ('%.11s' * #text))", '"round_without_icon@hud.custom_toast_variant"', '"round_with_glyph@hud.custom_toast_glyph_variant"', '"custom_toast_glyph_variant"', '"visible": "$toast_has_icon"', '"target_property_name": "#toast_glyph"', '"offset": [38, 0]', '"offset": "$toast_text_offset"'] as $requiredHudFragment){
 	if(!str_contains($hudSource, $requiredHudFragment)){
 		throw new RuntimeException("Injected HUD is missing a text hotfix: " . $requiredHudFragment);
 	}
+}
+$hud = json_decode($hudSource, true, flags: JSON_THROW_ON_ERROR);
+$glyphControl = $hud["custom_toast_glyph_variant"]["controls"][0]["glyph"] ?? null;
+if(!is_array($glyphControl) || array_key_exists("size", $glyphControl)){
+	throw new RuntimeException("Injected glyph label must use natural width instead of an ellipsizing fixed width");
 }
 if(str_contains($hudSource, '$toast_text_prefix_length') || str_contains($hudSource, "('%.' +")){
 	throw new RuntimeException("Injected HUD contains a client-unsafe dynamic prefix formatter");
@@ -131,7 +136,12 @@ $exampleSource = $phar["src/NhanAZ/CustomToastExample/Main.php"]->getContent();
 if(!str_contains($exampleSource, 'sendTip(') || !str_contains($exampleSource, "Group 5/5: Stack stability")){
 	throw new RuntimeException("Built plugin is missing guided toastdebug Tips");
 }
-foreach(["1BCD EFGH IJKL MNOP", "%toast% // and | must remain visible in content", "MESSAGE-ONLY: this toast has no title", '"Line 1\\nLine 2\\nLine 3"', "ICONLESS TITLE ONLY", "ICONLESS MESSAGE ONLY", "ULTRA-LONG PARAGRAPH", "COLORED TITLE", "COLORED MESSAGE", "FORMAT CODES", '"", "", "", "", "", "", "", "", "", "", "", "", "", ""', "DEBUG_TOAST_LIFETIME_TICKS = 145", "Each group starts after the previous group's toasts disappear"] as $requiredDebugCase){
+$expectedE0GlyphArray = '"' . implode('", "', array_map(static fn(int $codepoint) : string => mb_chr($codepoint, "UTF-8"), range(0xE000, 0xE00F))) . '"';
+$expectedE1GlyphArray = '"' . implode('", "', array_map(static fn(int $codepoint) : string => mb_chr($codepoint, "UTF-8"), range(0xE100, 0xE10D))) . '"';
+$expectedE0GlyphLineBreak = '"' . implode("", array_map(static fn(int $codepoint) : string => mb_chr($codepoint, "UTF-8"), range(0xE000, 0xE007))) . '\\n' . implode("", array_map(static fn(int $codepoint) : string => mb_chr($codepoint, "UTF-8"), range(0xE008, 0xE00F))) . '"';
+$expectedE1GlyphLineBreak = '"' . implode("", array_map(static fn(int $codepoint) : string => mb_chr($codepoint, "UTF-8"), range(0xE100, 0xE106))) . '\\n' . implode("", array_map(static fn(int $codepoint) : string => mb_chr($codepoint, "UTF-8"), range(0xE107, 0xE10D))) . '"';
+
+foreach(["1BCD EFGH IJKL MNOP", "%toast% // and | must remain visible in content", "MESSAGE-ONLY: this toast has no title", '"Line 1\\nLine 2\\nLine 3"', "ICONLESS TITLE ONLY", "ICONLESS MESSAGE ONLY", "ULTRA-LONG PARAGRAPH", "LONG MULTI-PARAGRAPH", "MANY EXPLICIT LINES", "Message-only paragraph one", "E0 GLYPHS IN TITLE", "E0 GLYPHS IN MESSAGE", "E1 GLYPHS IN TITLE", "E1 GLYPHS IN MESSAGE", $expectedE0GlyphLineBreak, $expectedE1GlyphLineBreak, "COLORED TITLE", "COLORED MESSAGE", "FORMAT CODES", $expectedE0GlyphArray, $expectedE1GlyphArray, "DEBUG_TOAST_LIFETIME_TICKS = 145", "remainingTicks", "Next group", "sendMessage", "36 focused cases", "30 glyph-icon cases", "U+E000-E00F and U+E100-E10D", "Total duration", "Each group starts after the previous group's toasts disappear"] as $requiredDebugCase){
 	if(!str_contains($exampleSource, $requiredDebugCase)){
 		throw new RuntimeException("Built plugin is missing a toastdebug regression case: " . $requiredDebugCase);
 	}

@@ -13,7 +13,7 @@ It is safe for other plugins to inject and use the same CustomToast release. The
 - Info, success, warning, and error toast styles.
 - Rounded and square background options.
 - Automatic colors and every current Minecraft Bedrock formatting-code color.
-- Image icons, compact iconless layouts, and one-code-point Unicode glyph icons.
+- Image icons, compact iconless layouts, and fixed-width three-byte Unicode glyph icons.
 - Bold title-only, message-only, or title-and-message notifications.
 - A title with a message containing one or more lines.
 - UTF-8 text, including Vietnamese.
@@ -70,15 +70,15 @@ Run the complete visual test from the console:
 toastdebug NhanAZ
 ```
 
-The suite sends 27 focused cases, all 14 Minecraft default private-use glyphs, and an eight-toast stack burst. A Tip stays visible throughout the run and identifies the active group. Every group waits until the previous group's final toast has completely disappeared before it starts:
+The suite sends 36 focused cases, 30 private-use glyphs in the icon slot, six glyph-in-text cases, and an eight-toast stack burst. The glyph coverage includes all 16 characters from `U+E000` through `U+E00F` and all 14 characters from `U+E100` through `U+E10D`. A Tip stays visible throughout the run, identifies the active group, and counts down both seconds and ticks. Chat announces each group once with its wait time, so it remains useful without being spammed. Every group waits until the previous group's final toast has completely disappeared before it starts:
 
 1. Appearance: toast types, corners, colors, Unicode, and sound.
 2. Number width A/B: equal-length title and message text beginning with a number or a letter.
-3. Text and formatting: iconless layouts, repeated line breaks, ultra-long text, colored title/message text, `§k`, `§i`, and `§r`.
-4. Unicode glyph icons: `U+E100` through `U+E10D` in both corner styles.
+3. Text and formatting: iconless layouts, long multi-paragraph messages, repeated and blank lines, ultra-long text, colored title/message text, `§k`, `§i`, and `§r`.
+4. Unicode glyphs: `U+E000` through `U+E00F` and `U+E100` through `U+E10D` in the icon slot, title, message, title-only, and message-only layouts.
 5. Stack stability: spacing and protection against textures swapping between queued items.
 
-The full run takes about 101 seconds. Avoid starting it a second time before the first run finishes.
+The full run takes about 138 seconds. Avoid starting it a second time before the first run finishes.
 
 ## Message-only and multi-line toasts
 
@@ -107,14 +107,14 @@ toast NhanAZ plain round blue Plain title\nPlain message.
 
 The trailing `\n` in the second command intentionally creates a title with an empty message.
 
-Prefix one Unicode code point with `glyph:` to replace the PNG icon while retaining icon spacing:
+Prefix one three-byte Unicode code point with `glyph:` to replace the PNG icon while retaining icon spacing:
 
 ```text
 toast NhanAZ glyph: round dark_gray Glyph U+E100\nFirst Minecraft default glyph.
 toast NhanAZ glyph: square blue Glyph U+E10D\nFourteenth Minecraft default glyph.
 ```
 
-The debug suite tests all of these defaults: ``. Other single-code-point characters are accepted, but whether they render depends on the active Minecraft font and resource packs. Multi-code-point emoji sequences are rejected.
+The debug suite tests all of these defaults: ``. Custom glyphs should use a three-byte Basic Multilingual Plane code point supplied by the active Minecraft font or a resource-pack `font/glyph_<page>.png` spritesheet. ASCII characters, four-byte emoji, and multi-code-point emoji sequences are rejected to keep the JSON UI payload width fixed and client-safe.
 
 For a title and a message, place the literal characters `\n` between them:
 

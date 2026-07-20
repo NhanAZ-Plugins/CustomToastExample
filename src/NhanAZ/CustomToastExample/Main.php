@@ -18,6 +18,7 @@ use function array_shift;
 use function count;
 use function explode;
 use function implode;
+use function intdiv;
 use function is_bool;
 use function is_int;
 use function mb_strlen;
@@ -25,6 +26,7 @@ use function mb_substr;
 use function sprintf;
 use function str_replace;
 use function str_starts_with;
+use function strlen;
 use function strtolower;
 use function trim;
 
@@ -132,8 +134,8 @@ final class Main extends PluginBase{
 		$appearanceStartTicks = 0;
 		$numberStartTicks = $appearanceStartTicks + 300 + self::DEBUG_TOAST_LIFETIME_TICKS + self::DEBUG_GROUP_GAP_TICKS;
 		$textStartTicks = $numberStartTicks + 90 + self::DEBUG_TOAST_LIFETIME_TICKS + self::DEBUG_GROUP_GAP_TICKS;
-		$glyphStartTicks = $textStartTicks + 330 + self::DEBUG_TOAST_LIFETIME_TICKS + self::DEBUG_GROUP_GAP_TICKS;
-		$stackStartTicks = $glyphStartTicks + 390 + self::DEBUG_TOAST_LIFETIME_TICKS + self::DEBUG_GROUP_GAP_TICKS;
+		$glyphStartTicks = $textStartTicks + 420 + self::DEBUG_TOAST_LIFETIME_TICKS + self::DEBUG_GROUP_GAP_TICKS;
+		$stackStartTicks = $glyphStartTicks + 1050 + self::DEBUG_TOAST_LIFETIME_TICKS + self::DEBUG_GROUP_GAP_TICKS;
 		$debugCompleteTicks = $stackStartTicks + self::DEBUG_TOAST_LIFETIME_TICKS + self::DEBUG_GROUP_GAP_TICKS;
 
 		/** @var list<array{int, ToastType, ToastCornerStyle, ToastColor, ?string, string, bool, 7?: bool}> $cases */
@@ -165,6 +167,15 @@ final class Main extends PluginBase{
 			[$textStartTicks + 270, ToastType::INFO, ToastCornerStyle::SQUARE, ToastColor::DARK_GRAY, "§cCOLORED TITLE", "The title is red while this message is reset", false],
 			[$textStartTicks + 300, ToastType::INFO, ToastCornerStyle::ROUND, ToastColor::DARK_GRAY, "COLORED MESSAGE", "§aGreen §bAqua §eYellow §dLight purple §rDefault", false],
 			[$textStartTicks + 330, ToastType::INFO, ToastCornerStyle::SQUARE, ToastColor::DARK_GRAY, "FORMAT CODES §kMAGIC§r", "§iMaterial iron §rReset §kObfuscated§r visible again", false],
+			[$textStartTicks + 360, ToastType::INFO, ToastCornerStyle::ROUND, ToastColor::DARK_AQUA, "LONG MULTI-PARAGRAPH", "Paragraph one uses a longer sentence to verify wrapping near the screen edge.\nIt continues on a second explicit line.\n\nParagraph two begins after a blank line.\nIt ends with another long sentence.", false],
+			[$textStartTicks + 390, ToastType::SUCCESS, ToastCornerStyle::SQUARE, ToastColor::GREEN, "MANY EXPLICIT LINES", "Long line one checks width.\nLong line two checks spacing.\nLong line three remains readable.\nLong line four stays aligned.\nLong line five completes the toast.", false],
+			[$textStartTicks + 420, ToastType::INFO, ToastCornerStyle::ROUND, ToastColor::AQUA, null, "Message-only paragraph one is deliberately long and has no title.\nIt continues on another explicit line.\n\nMessage-only paragraph two begins after a blank line.\nIts final line verifies the bottom edge.", false],
+			[$glyphStartTicks + 900, ToastType::INFO, ToastCornerStyle::ROUND, ToastColor::DARK_AQUA, "E0 GLYPHS IN TITLE ", "Control message without glyphs", false],
+			[$glyphStartTicks + 930, ToastType::INFO, ToastCornerStyle::SQUARE, ToastColor::DARK_PURPLE, "E0 GLYPHS IN MESSAGE", "\n", false],
+			[$glyphStartTicks + 960, ToastType::INFO, ToastCornerStyle::ROUND, ToastColor::DARK_AQUA, "E1 GLYPHS IN TITLE ", "Control message without glyphs", false],
+			[$glyphStartTicks + 990, ToastType::INFO, ToastCornerStyle::SQUARE, ToastColor::DARK_PURPLE, "E1 GLYPHS IN MESSAGE", "\n", false],
+			[$glyphStartTicks + 1020, ToastType::INFO, ToastCornerStyle::ROUND, ToastColor::GOLD, "", "", false, false],
+			[$glyphStartTicks + 1050, ToastType::INFO, ToastCornerStyle::SQUARE, ToastColor::AQUA, null, "\n\n\n", false, false],
 			[$stackStartTicks, ToastType::INFO, ToastCornerStyle::ROUND, ToastColor::BLUE, "STACK A", "Alternating texture", true],
 			[$stackStartTicks, ToastType::SUCCESS, ToastCornerStyle::SQUARE, ToastColor::GREEN, "STACK B", "Alternating texture", false],
 			[$stackStartTicks, ToastType::WARNING, ToastCornerStyle::ROUND, ToastColor::YELLOW, "STACK C", "Alternating texture", false],
@@ -185,27 +196,53 @@ final class Main extends PluginBase{
 			}), $delayTicks);
 		}
 
-		$glyphs = ["", "", "", "", "", "", "", "", "", "", "", "", "", ""];
-		foreach($glyphs as $index => $glyph){
-			$delayTicks = $glyphStartTicks + ($index * 30);
-			$cornerStyle = $index % 2 === 0 ? ToastCornerStyle::ROUND : ToastCornerStyle::SQUARE;
-			$title = sprintf("GLYPH U+E1%02X", $index);
-			$message = "Minecraft default glyph " . ($index + 1) . "/14";
-			$this->getScheduler()->scheduleDelayedTask(new ClosureTask(function() use ($player, $cornerStyle, $title, $message, $glyph) : void{
-				if($player->isConnected() && $this->customToast !== null){
-					$this->customToast->send($player, ToastType::INFO, $message, $title, false, $cornerStyle, ToastColor::DARK_GRAY, true, $glyph);
+		$glyphSets = [
+			["E0", ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""], 0],
+			["E1", ["", "", "", "", "", "", "", "", "", "", "", "", "", ""], 480]
+		];
+		foreach($glyphSets as [$page, $glyphs, $setDelayTicks]){
+			$glyphCount = count($glyphs);
+			foreach($glyphs as $index => $glyph){
+				$delayTicks = $glyphStartTicks + $setDelayTicks + ($index * 30);
+				$cornerStyle = $index % 2 === 0 ? ToastCornerStyle::ROUND : ToastCornerStyle::SQUARE;
+				$title = sprintf("GLYPH U+%s%02X", $page, $index);
+				$message = "Minecraft default glyph " . ($index + 1) . "/" . $glyphCount;
+				$this->getScheduler()->scheduleDelayedTask(new ClosureTask(function() use ($player, $cornerStyle, $title, $message, $glyph) : void{
+					if($player->isConnected() && $this->customToast !== null){
+						$this->customToast->send($player, ToastType::INFO, $message, $title, false, $cornerStyle, ToastColor::DARK_GRAY, true, $glyph);
+					}
+				}), $delayTicks);
+			}
+		}
+
+		$groupNotices = [
+			[$appearanceStartTicks, "Group 1/5: Appearance", $numberStartTicks, "Next group"],
+			[$numberStartTicks, "Group 2/5: Number width A/B", $textStartTicks, "Next group"],
+			[$textStartTicks, "Group 3/5: Text and formatting", $glyphStartTicks, "Next group"],
+			[$glyphStartTicks, "Group 4/5: Unicode glyphs", $stackStartTicks, "Next group"],
+			[$stackStartTicks, "Group 5/5: Stack stability", $debugCompleteTicks, "Debug completion"]
+		];
+		foreach($groupNotices as [$startTick, $label, $endTick, $nextLabel]){
+			$waitTicks = $endTick - $startTick;
+			$waitSeconds = intdiv($waitTicks + 19, 20);
+			$this->getScheduler()->scheduleDelayedTask(new ClosureTask(static function() use ($player, $label, $nextLabel, $waitSeconds, $waitTicks) : void{
+				if($player->isConnected()){
+					$player->sendMessage("§bCustomToast Debug §8⁕ §f{$label} §7started. {$nextLabel} in §e{$waitSeconds}s §8({$waitTicks} ticks)§7.");
 				}
-			}), $delayTicks);
+			}), $startTick);
 		}
 
 		for($tick = 0; $tick < $debugCompleteTicks; $tick += 20){
-			$tip = match(true){
-				$tick < $numberStartTicks => "§bCustomToast Debug §8⁕ §fGroup 1/5: Appearance\n§7Types, corners, colors, Unicode, and sound",
-				$tick < $textStartTicks => "§bCustomToast Debug §8⁕ §fGroup 2/5: Number width A/B\n§7Compare equal-length number- and letter-leading text",
-				$tick < $glyphStartTicks => "§bCustomToast Debug §8⁕ §fGroup 3/5: Text and formatting\n§7Iconless, long text, §kmagic§r§7, §iiron§r§7, reset, and colors",
-				$tick < $stackStartTicks => "§bCustomToast Debug §8⁕ §fGroup 4/5: Unicode glyph icons\n§7Testing Minecraft defaults U+E100 through U+E10D",
-				default => "§bCustomToast Debug §8⁕ §fGroup 5/5: Stack stability\n§7Check spacing and verify that textures never swap"
+			[$tip, $groupEndTick, $countdownLabel] = match(true){
+				$tick < $numberStartTicks => ["§bCustomToast Debug §8⁕ §fGroup 1/5: Appearance\n§7Types, corners, colors, Unicode, and sound", $numberStartTicks, "Next group"],
+				$tick < $textStartTicks => ["§bCustomToast Debug §8⁕ §fGroup 2/5: Number width A/B\n§7Compare equal-length number- and letter-leading text", $textStartTicks, "Next group"],
+				$tick < $glyphStartTicks => ["§bCustomToast Debug §8⁕ §fGroup 3/5: Text and formatting\n§7Iconless, long text, §kmagic§r§7, §iiron§r§7, reset, and colors", $glyphStartTicks, "Next group"],
+				$tick < $stackStartTicks => ["§bCustomToast Debug §8⁕ §fGroup 4/5: Unicode glyphs\n§7U+E000-E00F and U+E100-E10D in every text position", $stackStartTicks, "Next group"],
+				default => ["§bCustomToast Debug §8⁕ §fGroup 5/5: Stack stability\n§7Check spacing and verify that textures never swap", $debugCompleteTicks, "Complete"]
 			};
+			$remainingTicks = $groupEndTick - $tick;
+			$remainingSeconds = intdiv($remainingTicks + 19, 20);
+			$tip .= "\n§e{$countdownLabel} in {$remainingSeconds}s §8({$remainingTicks} ticks)";
 			$this->getScheduler()->scheduleDelayedTask(new ClosureTask(static function() use ($player, $tip) : void{
 				if($player->isConnected()){
 					$player->sendTip($tip);
@@ -215,10 +252,11 @@ final class Main extends PluginBase{
 		$this->getScheduler()->scheduleDelayedTask(new ClosureTask(static function() use ($player) : void{
 			if($player->isConnected()){
 				$player->sendTip("§aCustomToast debug complete");
+				$player->sendMessage("§aCustomToast Debug §8⁕ §fAll groups completed.");
 			}
 		}), $debugCompleteTicks);
 
-		$sender->sendMessage("Scheduled five isolated debug groups for " . $player->getName() . ". Each group starts after the previous group's toasts disappear.");
+		$sender->sendMessage("Scheduled five isolated debug groups (36 focused cases, 30 glyph-icon cases, and an 8-item stack burst) for " . $player->getName() . ". Each group starts after the previous group's toasts disappear. Total duration: " . intdiv($debugCompleteTicks, 20) . " seconds.");
 		return true;
 	}
 
@@ -227,8 +265,8 @@ final class Main extends PluginBase{
 		$normalizedValue = strtolower($value);
 		if(str_starts_with($normalizedValue, "glyph:")){
 			$glyph = mb_substr($value, 6, null, "UTF-8");
-			if(mb_strlen($glyph, "UTF-8") !== 1 || $glyph === "\r" || $glyph === "\n" || $glyph === "\t"){
-				throw new InvalidArgumentException("A glyph toast requires exactly one Unicode code point after 'glyph:'.");
+			if(mb_strlen($glyph, "UTF-8") !== 1 || strlen($glyph) !== 3 || $glyph === "\r" || $glyph === "\n" || $glyph === "\t"){
+				throw new InvalidArgumentException("A glyph toast requires exactly one three-byte Unicode code point after 'glyph:'.");
 			}
 			return [ToastType::INFO, false, $glyph];
 		}
