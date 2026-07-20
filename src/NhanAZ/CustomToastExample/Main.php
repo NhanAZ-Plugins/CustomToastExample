@@ -20,7 +20,11 @@ use function explode;
 use function implode;
 use function is_bool;
 use function is_int;
+use function mb_strlen;
+use function mb_substr;
+use function sprintf;
 use function str_replace;
+use function str_starts_with;
 use function strtolower;
 use function trim;
 
@@ -52,7 +56,7 @@ final class Main extends PluginBase{
 			return;
 		}
 
-		$this->getLogger()->info("CustomToastExample is ready. Use 'toast <player|all> <plain|type> <corner> <color> <message>' or 'toastdebug <player>'.");
+		$this->getLogger()->info("CustomToastExample is ready. Use 'toast <player|all> <plain|glyph:char|type> <corner> <color> <message>' or 'toastdebug <player>'.");
 	}
 
 	protected function onDisable() : void{
@@ -86,12 +90,12 @@ final class Main extends PluginBase{
 		}
 
 		$target = (string) array_shift($args);
-		[$type, $showIcon] = $this->parseType((string) array_shift($args));
+		[$type, $showIcon, $glyph] = $this->parseType((string) array_shift($args));
 		$cornerStyle = $this->parseCornerStyle((string) array_shift($args));
 		$color = $this->parseColor((string) array_shift($args));
 		[$title, $message] = $this->parseText($args);
 		if(strtolower($target) === "all"){
-			$count = $this->customToast?->broadcast($type, $message, $title, null, $cornerStyle, $color, $showIcon) ?? 0;
+			$count = $this->customToast?->broadcast($type, $message, $title, null, $cornerStyle, $color, $showIcon, $glyph) ?? 0;
 			$sender->sendMessage("Toast sent to {$count} player(s).");
 			return true;
 		}
@@ -102,7 +106,7 @@ final class Main extends PluginBase{
 			return true;
 		}
 
-		$this->customToast?->send($player, $type, $message, $title, null, $cornerStyle, $color, $showIcon);
+		$this->customToast?->send($player, $type, $message, $title, null, $cornerStyle, $color, $showIcon, $glyph);
 		$sender->sendMessage("Toast sent to " . $player->getName() . ".");
 		return true;
 	}
@@ -122,17 +126,17 @@ final class Main extends PluginBase{
 
 		/** @var list<array{int, ToastType, ToastCornerStyle, ToastColor, ?string, string, bool, 7?: bool}> $cases */
 		$cases = [
-			[0, ToastType::INFO, ToastCornerStyle::ROUND, ToastColor::AUTO, null, "Message only • Unicode: Xin chào!", true],
-			[30, ToastType::SUCCESS, ToastCornerStyle::ROUND, ToastColor::AUTO, "SUCCESS • ROUND • AUTO", "Automatic success color", false],
-			[60, ToastType::WARNING, ToastCornerStyle::ROUND, ToastColor::AUTO, "WARNING • ROUND • AUTO", "Automatic warning color", false],
-			[90, ToastType::ERROR, ToastCornerStyle::ROUND, ToastColor::AUTO, "ERROR • ROUND • AUTO", "Automatic error color", false],
-			[120, ToastType::INFO, ToastCornerStyle::SQUARE, ToastColor::AUTO, "INFO • SQUARE • AUTO", "Automatic info color", false],
-			[150, ToastType::SUCCESS, ToastCornerStyle::SQUARE, ToastColor::NEUTRAL, "SUCCESS • SQUARE • NEUTRAL", "Neutral background", false],
-			[180, ToastType::WARNING, ToastCornerStyle::ROUND, ToastColor::BLACK, "WARNING • ROUND • BLACK", "Dark contrast check", false],
-			[210, ToastType::ERROR, ToastCornerStyle::SQUARE, ToastColor::WHITE, "ERROR • SQUARE • WHITE", "Light contrast check", false],
-			[240, ToastType::SUCCESS, ToastCornerStyle::ROUND, ToastColor::MATERIAL_EMERALD, "SUCCESS • ROUND • EMERALD", "Bedrock material color", false],
-			[270, ToastType::WARNING, ToastCornerStyle::SQUARE, ToastColor::MATERIAL_RESIN, "WARNING • SQUARE • RESIN", "Bedrock material color", false],
-			[300, ToastType::INFO, ToastCornerStyle::ROUND, ToastColor::LIGHT_BLUE, "INFO • ROUND • LIGHT BLUE", "Pipe stays visible: Rank A | Rank B", false],
+			[0, ToastType::INFO, ToastCornerStyle::ROUND, ToastColor::AUTO, null, "Message only ⁕ Unicode: Xin chào!", true],
+			[30, ToastType::SUCCESS, ToastCornerStyle::ROUND, ToastColor::AUTO, "SUCCESS ⁕ ROUND ⁕ AUTO", "Automatic success color", false],
+			[60, ToastType::WARNING, ToastCornerStyle::ROUND, ToastColor::AUTO, "WARNING ⁕ ROUND ⁕ AUTO", "Automatic warning color", false],
+			[90, ToastType::ERROR, ToastCornerStyle::ROUND, ToastColor::AUTO, "ERROR ⁕ ROUND ⁕ AUTO", "Automatic error color", false],
+			[120, ToastType::INFO, ToastCornerStyle::SQUARE, ToastColor::AUTO, "INFO ⁕ SQUARE ⁕ AUTO", "Automatic info color", false],
+			[150, ToastType::SUCCESS, ToastCornerStyle::SQUARE, ToastColor::NEUTRAL, "SUCCESS ⁕ SQUARE ⁕ NEUTRAL", "Neutral background", false],
+			[180, ToastType::WARNING, ToastCornerStyle::ROUND, ToastColor::BLACK, "WARNING ⁕ ROUND ⁕ BLACK", "Dark contrast check", false],
+			[210, ToastType::ERROR, ToastCornerStyle::SQUARE, ToastColor::WHITE, "ERROR ⁕ SQUARE ⁕ WHITE", "Light contrast check", false],
+			[240, ToastType::SUCCESS, ToastCornerStyle::ROUND, ToastColor::MATERIAL_EMERALD, "SUCCESS ⁕ ROUND ⁕ EMERALD", "Bedrock material color", false],
+			[270, ToastType::WARNING, ToastCornerStyle::SQUARE, ToastColor::MATERIAL_RESIN, "WARNING ⁕ SQUARE ⁕ RESIN", "Bedrock material color", false],
+			[300, ToastType::INFO, ToastCornerStyle::ROUND, ToastColor::LIGHT_BLUE, "INFO ⁕ ROUND ⁕ LIGHT BLUE", "Pipe stays visible: Rank A | Rank B", false],
 			[360, ToastType::INFO, ToastCornerStyle::ROUND, ToastColor::BLUE, null, "1BCD EFGH IJKL MNOP", false],
 			[390, ToastType::INFO, ToastCornerStyle::ROUND, ToastColor::BLUE, null, "ABCD EFGH IJKL MNOP", false],
 			[420, ToastType::INFO, ToastCornerStyle::ROUND, ToastColor::BLUE, "1BCD EFGH IJKL", "Same title-width control", false],
@@ -146,14 +150,17 @@ final class Main extends PluginBase{
 			[660, ToastType::INFO, ToastCornerStyle::ROUND, ToastColor::DARK_GRAY, "ICONLESS TITLE ONLY", "", false, false],
 			[690, ToastType::INFO, ToastCornerStyle::SQUARE, ToastColor::DARK_AQUA, null, "ICONLESS MESSAGE ONLY: the left padding should remain compact", false, false],
 			[720, ToastType::INFO, ToastCornerStyle::ROUND, ToastColor::LIGHT_BLUE, "ULTRA-LONG PARAGRAPH", "This deliberately oversized paragraph checks the maximum configured message length, UTF-8-safe truncation, screen-edge behavior, animation, and queue spacing when a toast contains far more ordinary words than a real notification should normally need. The ending may be truncated when max-message-bytes is smaller than this complete sentence, which is expected and must never split a UTF-8 character or crash the client.", false],
-			[840, ToastType::INFO, ToastCornerStyle::ROUND, ToastColor::BLUE, "STACK A", "Alternating texture", true],
-			[840, ToastType::SUCCESS, ToastCornerStyle::SQUARE, ToastColor::GREEN, "STACK B", "Alternating texture", false],
-			[840, ToastType::WARNING, ToastCornerStyle::ROUND, ToastColor::YELLOW, "STACK C", "Alternating texture", false],
-			[840, ToastType::ERROR, ToastCornerStyle::SQUARE, ToastColor::RED, "STACK D", "Alternating texture", false],
-			[840, ToastType::INFO, ToastCornerStyle::ROUND, ToastColor::AQUA, "STACK E", "Alternating texture", false],
-			[840, ToastType::SUCCESS, ToastCornerStyle::SQUARE, ToastColor::MATERIAL_EMERALD, "STACK F", "Alternating texture", false],
-			[840, ToastType::WARNING, ToastCornerStyle::ROUND, ToastColor::MATERIAL_GOLD, "STACK G", "Alternating texture", false],
-			[840, ToastType::ERROR, ToastCornerStyle::SQUARE, ToastColor::MATERIAL_AMETHYST, "STACK H", "Alternating texture", false]
+			[750, ToastType::INFO, ToastCornerStyle::SQUARE, ToastColor::DARK_GRAY, "§cCOLORED TITLE", "The title is red while this message is reset", false],
+			[780, ToastType::INFO, ToastCornerStyle::ROUND, ToastColor::DARK_GRAY, "COLORED MESSAGE", "§aGreen §bAqua §eYellow §dLight purple §rDefault", false],
+			[810, ToastType::INFO, ToastCornerStyle::SQUARE, ToastColor::DARK_GRAY, "FORMAT CODES §kMAGIC§r", "§iMaterial iron §rReset §kObfuscated§r visible again", false],
+			[1380, ToastType::INFO, ToastCornerStyle::ROUND, ToastColor::BLUE, "STACK A", "Alternating texture", true],
+			[1380, ToastType::SUCCESS, ToastCornerStyle::SQUARE, ToastColor::GREEN, "STACK B", "Alternating texture", false],
+			[1380, ToastType::WARNING, ToastCornerStyle::ROUND, ToastColor::YELLOW, "STACK C", "Alternating texture", false],
+			[1380, ToastType::ERROR, ToastCornerStyle::SQUARE, ToastColor::RED, "STACK D", "Alternating texture", false],
+			[1380, ToastType::INFO, ToastCornerStyle::ROUND, ToastColor::AQUA, "STACK E", "Alternating texture", false],
+			[1380, ToastType::SUCCESS, ToastCornerStyle::SQUARE, ToastColor::MATERIAL_EMERALD, "STACK F", "Alternating texture", false],
+			[1380, ToastType::WARNING, ToastCornerStyle::ROUND, ToastColor::MATERIAL_GOLD, "STACK G", "Alternating texture", false],
+			[1380, ToastType::ERROR, ToastCornerStyle::SQUARE, ToastColor::MATERIAL_AMETHYST, "STACK H", "Alternating texture", false]
 		];
 
 		foreach($cases as $case){
@@ -165,12 +172,27 @@ final class Main extends PluginBase{
 				}
 			}), $delayTicks);
 		}
-		for($tick = 0; $tick <= 980; $tick += 20){
+
+		$glyphs = ["", "", "", "", "", "", "", "", "", "", "", "", "", ""];
+		foreach($glyphs as $index => $glyph){
+			$delayTicks = 900 + ($index * 30);
+			$cornerStyle = $index % 2 === 0 ? ToastCornerStyle::ROUND : ToastCornerStyle::SQUARE;
+			$title = sprintf("GLYPH U+E1%02X", $index);
+			$message = "Minecraft default glyph " . ($index + 1) . "/14";
+			$this->getScheduler()->scheduleDelayedTask(new ClosureTask(function() use ($player, $cornerStyle, $title, $message, $glyph) : void{
+				if($player->isConnected() && $this->customToast !== null){
+					$this->customToast->send($player, ToastType::INFO, $message, $title, false, $cornerStyle, ToastColor::DARK_GRAY, true, $glyph);
+				}
+			}), $delayTicks);
+		}
+
+		for($tick = 0; $tick <= 1520; $tick += 20){
 			$tip = match(true){
-				$tick < 360 => "§bCustomToast Debug §8• §fGroup 1/4: Appearance\n§7Types, corners, colors, Unicode, and sound",
-				$tick < 480 => "§bCustomToast Debug §8• §fGroup 2/4: Number width A/B\n§7Compare equal-length number- and letter-leading text",
-				$tick < 840 => "§bCustomToast Debug §8• §fGroup 3/4: Text edge cases\n§7Iconless, title-only, multi-line, ultra-long text, and markers",
-				default => "§bCustomToast Debug §8• §fGroup 4/4: Stack stability\n§7Check spacing and verify that textures never swap"
+				$tick < 360 => "§bCustomToast Debug §8⁕ §fGroup 1/5: Appearance\n§7Types, corners, colors, Unicode, and sound",
+				$tick < 480 => "§bCustomToast Debug §8⁕ §fGroup 2/5: Number width A/B\n§7Compare equal-length number- and letter-leading text",
+				$tick < 900 => "§bCustomToast Debug §8⁕ §fGroup 3/5: Text and formatting\n§7Iconless, long text, §kmagic§r§7, §iiron§r§7, reset, and colors",
+				$tick < 1380 => "§bCustomToast Debug §8⁕ §fGroup 4/5: Unicode glyph icons\n§7Testing Minecraft defaults U+E100 through U+E10D",
+				default => "§bCustomToast Debug §8⁕ §fGroup 5/5: Stack stability\n§7Check spacing and verify that textures never swap"
 			};
 			$this->getScheduler()->scheduleDelayedTask(new ClosureTask(static function() use ($player, $tip) : void{
 				if($player->isConnected()){
@@ -182,23 +204,30 @@ final class Main extends PluginBase{
 			if($player->isConnected()){
 				$player->sendTip("§aCustomToast debug complete");
 			}
-		}), 1000);
+		}), 1540);
 
-		$sender->sendMessage("Scheduled 24 focused cases and an 8-item stack burst for " . $player->getName() . ". Tips identify each debug group.");
+		$sender->sendMessage("Scheduled 27 focused cases, 14 glyph cases, and an 8-item stack burst for " . $player->getName() . ". Tips identify each debug group.");
 		return true;
 	}
 
-	/** @return array{ToastType, bool} */
+	/** @return array{ToastType, bool, ?string} */
 	private function parseType(string $value) : array{
-		$value = strtolower($value);
-		if($value === "plain" || $value === "text" || $value === "none" || $value === "noicon" || $value === "no_icon"){
-			return [ToastType::INFO, false];
+		$normalizedValue = strtolower($value);
+		if(str_starts_with($normalizedValue, "glyph:")){
+			$glyph = mb_substr($value, 6, null, "UTF-8");
+			if(mb_strlen($glyph, "UTF-8") !== 1 || $glyph === "\r" || $glyph === "\n" || $glyph === "\t"){
+				throw new InvalidArgumentException("A glyph toast requires exactly one Unicode code point after 'glyph:'.");
+			}
+			return [ToastType::INFO, false, $glyph];
+		}
+		if($normalizedValue === "plain" || $normalizedValue === "text" || $normalizedValue === "none" || $normalizedValue === "noicon" || $normalizedValue === "no_icon"){
+			return [ToastType::INFO, false, null];
 		}
 
-		$type = ToastType::fromName($value) ?? throw new InvalidArgumentException(
-			"Unknown toast type '{$value}'. Use plain, info, success, warning, or error."
+		$type = ToastType::fromName($normalizedValue) ?? throw new InvalidArgumentException(
+			"Unknown toast type '{$value}'. Use plain, glyph:<character>, info, success, warning, or error."
 		);
-		return [$type, true];
+		return [$type, true, null];
 	}
 
 	private function parseCornerStyle(string $value) : ToastCornerStyle{

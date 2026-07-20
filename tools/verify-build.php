@@ -84,18 +84,18 @@ $customToastSource = $phar["src/NhanAZ/CustomToast/CustomToast.php"]->getContent
 if(!str_contains($customToastSource, 'private const SOUND_NAME = "random.toast";')){
 	throw new RuntimeException("Injected library does not use the built-in random.toast sound event");
 }
-if(!str_contains($customToastSource, '?bool $showIcon = null')){
-	throw new RuntimeException("Injected library does not expose optional toast icons");
+if(!str_contains($customToastSource, '?bool $showIcon = null') || !str_contains($customToastSource, '?string $glyph = null')){
+	throw new RuntimeException("Injected library does not expose image, iconless, and glyph modes");
 }
 $toastPayloadSource = $phar["src/NhanAZ/CustomToast/ToastPayload.php"]->getContent();
 if(!str_contains($toastPayloadSource, "normaliseMessage") || !str_contains($toastPayloadSource, 'str_replace(["\\r\\n", "\\r"], "\\n", $text)')){
 	throw new RuntimeException("Injected library does not preserve message line breaks");
 }
-if(!str_contains($toastPayloadSource, 'strtoupper($type->value)')){
-	throw new RuntimeException("Injected library does not encode the icon visibility state");
+if(!str_contains($toastPayloadSource, 'strtoupper($type->value)') || !str_contains($toastPayloadSource, 'mb_strlen($glyph, "UTF-8")') || !str_contains($toastPayloadSource, '"§l" . $title . "§r"')){
+	throw new RuntimeException("Injected library does not encode icon modes, validate glyphs, and bold titles");
 }
 $hudSource = $phar["resources/CustomToast/ui/hud_screen.json"]->getContent();
-foreach(['"size": ["100%", "100%c"]', '"100%cm + 8px"', "(('§r' + #text) - ('%.12s' * #text))", '"round_without_icon@hud.custom_toast_variant"', '"visible": "$toast_has_icon"', '"offset": "$toast_text_offset"'] as $requiredHudFragment){
+foreach(['"size": ["100%", "100%c"]', '"100%cm + 8px"', "('%.' + \$toast_text_prefix_length + 's') * #text", '"round_without_icon@hud.custom_toast_variant"', '"round_with_glyph@hud.custom_toast_variant"', '"visible": "$toast_has_icon"', '"visible": "$toast_has_glyph"', '"target_property_name": "#toast_glyph"', '"offset": "$toast_text_offset"'] as $requiredHudFragment){
 	if(!str_contains($hudSource, $requiredHudFragment)){
 		throw new RuntimeException("Injected HUD is missing a text hotfix: " . $requiredHudFragment);
 	}
@@ -125,13 +125,16 @@ foreach($forbiddenPrototypeIconHashes as $iconName => $forbiddenHash){
 }
 
 $exampleSource = $phar["src/NhanAZ/CustomToastExample/Main.php"]->getContent();
-if(!str_contains($exampleSource, 'sendTip(') || !str_contains($exampleSource, "Group 4/4: Stack stability")){
+if(!str_contains($exampleSource, 'sendTip(') || !str_contains($exampleSource, "Group 5/5: Stack stability")){
 	throw new RuntimeException("Built plugin is missing guided toastdebug Tips");
 }
-foreach(["1BCD EFGH IJKL MNOP", "%toast% // and | must remain visible in content", "MESSAGE-ONLY: this toast has no title", '"Line 1\\nLine 2\\nLine 3"', "ICONLESS TITLE ONLY", "ICONLESS MESSAGE ONLY", "ULTRA-LONG PARAGRAPH", "Scheduled 24 focused cases"] as $requiredDebugCase){
+foreach(["1BCD EFGH IJKL MNOP", "%toast% // and | must remain visible in content", "MESSAGE-ONLY: this toast has no title", '"Line 1\\nLine 2\\nLine 3"', "ICONLESS TITLE ONLY", "ICONLESS MESSAGE ONLY", "ULTRA-LONG PARAGRAPH", "COLORED TITLE", "COLORED MESSAGE", "FORMAT CODES", '"", "", "", "", "", "", "", "", "", "", "", "", "", ""', "Scheduled 27 focused cases, 14 glyph cases"] as $requiredDebugCase){
 	if(!str_contains($exampleSource, $requiredDebugCase)){
 		throw new RuntimeException("Built plugin is missing a toastdebug regression case: " . $requiredDebugCase);
 	}
+}
+if(str_contains($exampleSource, "•") || !str_contains($exampleSource, "⁕")){
+	throw new RuntimeException("Toast debug labels must use the requested U+2055 flower punctuation");
 }
 
 echo "Build verification passed: PHP library and resource pack are both injected." . PHP_EOL;

@@ -13,7 +13,8 @@ It is safe for other plugins to inject and use the same CustomToast release. The
 - Info, success, warning, and error toast styles.
 - Rounded and square background options.
 - Automatic colors and every current Minecraft Bedrock formatting-code color.
-- Optional icons and title-only or message-only notifications.
+- Image icons, compact iconless layouts, and one-code-point Unicode glyph icons.
+- Bold title-only, message-only, or title-and-message notifications.
 - A title with a message containing one or more lines.
 - UTF-8 text, including Vietnamese.
 - Minecraft's optional built-in vanilla toast sound.
@@ -46,7 +47,9 @@ toast NhanAZ info round light_blue Party notification
 toast NhanAZ info round blue 1 reward is ready.
 toast NhanAZ plain round dark_gray This message has no icon.
 toast NhanAZ plain square dark_aqua Title only\n
+toast NhanAZ glyph: round dark_gray Glyph title\nMinecraft default glyph U+E100.
 toast NhanAZ success round green Daily rewards\nFirst reward\nSecond reward\n\nCome back tomorrow.
+toast NhanAZ info round dark_gray §cRed title\n§aGreen §bAqua §eYellow §rDefault message
 toast all info round auto The event is now open!
 toastdebug NhanAZ
 ```
@@ -54,7 +57,7 @@ toastdebug NhanAZ
 Every command follows the same order:
 
 ```text
-toast <player|all> <plain|type> <corner> <color> <message>
+toast <player|all> <plain|glyph:character|type> <corner> <color> <message>
 ```
 
 Use an online player name for one recipient, or use `all` for every online player.
@@ -67,14 +70,15 @@ Run the complete visual test from the console:
 toastdebug NhanAZ
 ```
 
-The suite sends 24 focused cases followed by an eight-toast stack burst. A Tip stays visible throughout the run and identifies the active group:
+The suite sends 27 focused cases, all 14 Minecraft default private-use glyphs, and an eight-toast stack burst. A Tip stays visible throughout the run and identifies the active group:
 
 1. Appearance: toast types, corners, colors, Unicode, and sound.
 2. Number width A/B: equal-length title and message text beginning with a number or a letter.
-3. Text edge cases: iconless title-only and message-only layouts, repeated line breaks, an empty line, ultra-long text, and literal marker characters.
-4. Stack stability: spacing and protection against textures swapping between queued items.
+3. Text and formatting: iconless layouts, repeated line breaks, ultra-long text, colored title/message text, `§k`, `§i`, and `§r`.
+4. Unicode glyph icons: `U+E100` through `U+E10D` in both corner styles.
+5. Stack stability: spacing and protection against textures swapping between queued items.
 
-The full run takes about 52 seconds. Avoid starting it a second time before the first run finishes.
+The full run takes about 78 seconds. Avoid starting it a second time before the first run finishes.
 
 ## Message-only and multi-line toasts
 
@@ -103,6 +107,15 @@ toast NhanAZ plain round blue Plain title\nPlain message.
 
 The trailing `\n` in the second command intentionally creates a title with an empty message.
 
+Prefix one Unicode code point with `glyph:` to replace the PNG icon while retaining icon spacing:
+
+```text
+toast NhanAZ glyph: round dark_gray Glyph U+E100\nFirst Minecraft default glyph.
+toast NhanAZ glyph: square blue Glyph U+E10D\nFourteenth Minecraft default glyph.
+```
+
+The debug suite tests all of these defaults: ``. Other single-code-point characters are accepted, but whether they render depends on the active Minecraft font and resource packs. Multi-code-point emoji sequences are rejected.
+
 For a title and a message, place the literal characters `\n` between them:
 
 ```text
@@ -122,6 +135,13 @@ toast NhanAZ info square aqua \nLine one\n\nLine three after an empty line.
 ```
 
 The example plugin converts the first `\n` into the title/message boundary and preserves every later line break in the message. The pipe character `|` is not a separator; it remains visible in the message. This means a message such as `Rank A | Rank B` works exactly as written.
+
+Titles are automatically bold. Minecraft formatting codes inside either field remain active, and the library resets formatting between the title and message:
+
+```text
+toast NhanAZ info round dark_gray §cRed title\n§aGreen §bAqua §eYellow §rDefault message
+toast NhanAZ info square dark_gray Formatting\n§kObfuscated §rReset §iMaterial iron
+```
 
 ## Configuration
 
@@ -230,6 +250,18 @@ $this->customToast->send(
     type: ToastType::SUCCESS,
     message: "Daily reward claimed.",
     showIcon: false
+);
+```
+
+Use the named `glyph` argument to replace the image icon:
+
+```php
+$this->customToast->send(
+    player: $player,
+    type: ToastType::INFO,
+    message: "Minecraft default glyph U+E100.",
+    title: "Glyph notification",
+    glyph: ""
 );
 ```
 
