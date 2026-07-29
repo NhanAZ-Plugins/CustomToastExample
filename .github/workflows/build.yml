@@ -28,7 +28,7 @@ jobs:
         uses: actions/checkout@v7.0.1
         with:
           repository: NhanAZ-Libraries/CustomToast
-          ref: b0f103871c2f9a45021b0b4d568aa27525017254
+          ref: f821986563f59897624b7693853371ff79225ee5
           path: virions/CustomToast
           persist-credentials: false
 
@@ -69,7 +69,7 @@ jobs:
       - name: Verify shaded library and resource pack
         env:
           PHAR_PATH: ${{ steps.build.outputs.phar }}
-        run: php tools/verify-build.php "$PHAR_PATH" devtools
+        run: php tools/verify-build.php "$PHAR_PATH"
 
       - name: Upload PHAR from this commit
         uses: actions/upload-artifact@v7.0.1

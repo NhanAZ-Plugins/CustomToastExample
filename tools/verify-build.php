@@ -3,11 +3,7 @@
 declare(strict_types=1);
 
 $exampleRoot = dirname(__DIR__);
-$pharPath = $argv[1] ?? ($exampleRoot . "/dist/CustomToastExample.phar");
-$expectedBuildMode = $argv[2] ?? "any";
-if(!in_array($expectedBuildMode, ["any", "devtools", "direct"], true)){
-	throw new RuntimeException("Expected build mode must be any, devtools, or direct");
-}
+$pharPath = $argv[1] ?? ($exampleRoot . "/build/CustomToastExample.phar");
 if(!file_exists($pharPath)){
 	throw new RuntimeException("Build artifact does not exist: " . $pharPath);
 }
@@ -27,20 +23,11 @@ foreach($entryPaths as $entryPath){
 		$customToastSourceRoots[$matches[1]] = true;
 	}
 }
-if(count($customToastSourceRoots) === 1){
-	$buildMode = "devtools";
-	$customToastSourceRoot = (string) array_key_first($customToastSourceRoots);
-	$customToastResourceRoot = "resources/devtools-virions/CustomToast/CustomToast";
-}elseif(count($customToastSourceRoots) === 0 && isset($phar["src/NhanAZ/CustomToast/CustomToast.php"])){
-	$buildMode = "direct";
-	$customToastSourceRoot = "src/NhanAZ/CustomToast";
-	$customToastResourceRoot = "resources/CustomToast";
-}else{
-	throw new RuntimeException("Build must contain exactly one direct or DevTools-shaded CustomToast source root");
+if(count($customToastSourceRoots) !== 1){
+	throw new RuntimeException("Build must contain exactly one DevTools-shaded CustomToast source root");
 }
-if($expectedBuildMode !== "any" && $buildMode !== $expectedBuildMode){
-	throw new RuntimeException("Expected a {$expectedBuildMode} build, received {$buildMode}");
-}
+$customToastSourceRoot = (string) array_key_first($customToastSourceRoots);
+$customToastResourceRoot = "resources/devtools-virions/CustomToast/CustomToast";
 $requiredEntries = [
 	"plugin.yml",
 	"src/NhanAZ/CustomToastExample/Main.php",
@@ -65,10 +52,8 @@ $requiredEntries = [
 	"{$customToastResourceRoot}/textures/ui/custom_toast/icon_success.png",
 	"{$customToastResourceRoot}/textures/ui/custom_toast/icon_warning.png",
 	"{$customToastResourceRoot}/textures/ui/custom_toast/icon_error.png",
+	"META-INF/virions/CustomToast/LICENSE",
 ];
-if($buildMode === "devtools"){
-	$requiredEntries[] = "META-INF/virions/CustomToast/LICENSE";
-}
 
 foreach($requiredEntries as $entry){
 	if(!isset($phar[$entry])){
@@ -185,4 +170,4 @@ if(str_contains($exampleSource, "•") || !str_contains($exampleSource, "⁕")){
 	throw new RuntimeException("Toast debug labels must use the requested U+2055 flower punctuation");
 }
 
-echo "Build verification passed for {$buildMode} mode: PHP library and resource pack are both injected." . PHP_EOL;
+echo "DevTools build verification passed: shaded PHP library, resource pack, and license are present." . PHP_EOL;

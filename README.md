@@ -6,7 +6,7 @@ The library repository is the canonical documentation. This repository stays foc
 
 You do not need to install the virion separately. Release builds already contain both the PHP library and its resource pack.
 
-It is safe for other plugins to inject and use the same CustomToast release. The first consumer registers the pack, all later consumers share it, and the pack stays active until the final consumer closes.
+During folder-plugin development, multiple plugins may use the one CustomToast copy loaded from the server's `virions/CustomToast` directory. Production PHARs built by DevTools contain private shaded copies, so only one CustomToast-consuming production PHAR should run on a server.
 
 ## What this plugin demonstrates
 
@@ -184,45 +184,28 @@ The workflow checks out an exact CustomToast commit below `virions/CustomToast`.
 
 The finished file inside the artifact is `CustomToastExample.phar`. It contains the plugin, the shaded CustomToast PHP library, the complete resource pack, and the virion license.
 
-### Alternative unshaded Pockgin build
+### Local DevTools development and build
 
-`pockgin.libs.yml` retains the original unshaded mappings:
-
-```text
-src/NhanAZ/CustomToast  -> PHP library
-resources/CustomToast  -> UI and images
-```
-
-Install Pockgin CLI and build:
-
-```bash
-git clone https://github.com/pockgin/cli.git
-cd cli
-npm install
-node bin/pockgin.js build /path/to/CustomToastExample
-```
-
-The finished file is `CustomToastExample/dist/CustomToastExample.phar`. The same verifier accepts this direct build and checks that both halves of the virion are present.
-
-Do not change the Pockgin target namespace. The fixed `NhanAZ/CustomToast` path is what allows several plugins to share one runtime instead of registering duplicate resource packs.
-
-### Local direct build
-
-When the two repositories are adjacent on disk, no published tag is needed:
+Install `DevTools.phar`, then use this server layout:
 
 ```text
-Downloads/
-├── CustomToast/
-└── CustomToastExample/
+server/
+|- plugins/
+|  |- DevTools.phar
+|  `- CustomToastExample/
+|- virions/
+|  `- CustomToast/
+`- build/
 ```
 
-Run:
+Start the server and run:
 
-```bash
-php -d phar.readonly=0 tools/build-local.php
+```text
+/devtools doctor CustomToastExample
+/devtools build CustomToastExample
 ```
 
-The local builder uses a temporary staging directory, injects the sibling library without shading, creates the PHAR, verifies it, and removes the staging directory. It never writes vendored library files into the example's source tree. To reproduce the release artifact instead, run DevTools with this repository as the project and the sibling CustomToast checkout inside the selected virions directory.
+DevTools loads CustomToast once for folder-plugin development and reads its resource pack from the virion source directory. The build command creates `build/CustomToastExample.phar` with a private shaded CustomToast copy and its complete resource pack.
 
 ## Using the virion in your own plugin
 
@@ -297,7 +280,7 @@ Make sure it is one backslash followed by a lowercase `n`. Do not add spaces aro
 
 ### The build cannot resolve CustomToast
 
-The DevTools workflow pins an exact `NhanAZ-Libraries/CustomToast` commit and places it at `virions/CustomToast`. Keep that checkout and the `^1.0.0` requirement in `devtools.yml` compatible. For a direct local build, place both repositories next to each other and use `tools/build-local.php`.
+The DevTools workflow pins an exact `NhanAZ-Libraries/CustomToast` commit and places it at `virions/CustomToast`. Keep that checkout and the `^1.0.0` requirement in `devtools.yml` compatible. For server development, use the same directory name below the server's `virions/` directory.
 
 ## Version policy
 
