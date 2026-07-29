@@ -1,0 +1,3 @@
+virions:
+  - name: CustomToast
+    version: ^1.0.0

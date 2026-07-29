@@ -1,5 +1,9 @@
 /composer.lock
 /dist/
+/build/
+/virions/
+/.devtools-dependencies/
+/.php-bin/
 /vendor/
 /.phpunit.result.cache
 /.phpstan.cache

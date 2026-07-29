@@ -23,10 +23,10 @@ It is safe for other plugins to inject and use the same CustomToast release. The
 
 ## Installation
 
-1. Download `CustomToastExample.phar` from the latest release.
-2. Put it in your PocketMine-MP `plugins` folder.
-3. Start the server.
-4. Join the server and accept the resource pack.
+1. Open the repository's [Build workflow](https://github.com/NhanAZ-Plugins/CustomToastExample/actions/workflows/build.yml).
+2. Choose a successful run and download the `CustomToastExample-<commit SHA>` artifact.
+3. Extract `CustomToastExample.phar` and put it in your PocketMine-MP `plugins` folder.
+4. Start the server, join it, and accept the resource pack.
 5. Use the `toast` command from the server console.
 
 If a player refuses the resource pack, the default configuration prevents that player from joining. This is intentional: the custom packet marker should never appear as a normal chat message.
@@ -170,9 +170,23 @@ Both commands are operator-only by default.
 
 ## Building from source
 
-### Recommended release build
+### Recommended DevTools build
 
-This project uses [Pockgin CLI](https://github.com/pockgin/cli) because the library must be injected into the plugin PHAR. `pockgin.libs.yml` maps two folders from the CustomToast repository:
+This project uses [NhanAZ/DevTools](https://github.com/NhanAZ/DevTools). `devtools.yml` declares the required virion:
+
+```yaml
+virions:
+  - name: CustomToast
+    version: ^1.0.0
+```
+
+The workflow checks out an exact CustomToast commit below `virions/CustomToast`. DevTools shades its PHP source into a private plugin namespace, stores its resources in the protected virion resource directory, verifies the resulting PHAR, and uploads exactly one artifact for every commit. PHPStan is intentionally off because this repository has not requested a PHPStan gate.
+
+The finished file inside the artifact is `CustomToastExample.phar`. It contains the plugin, the shaded CustomToast PHP library, the complete resource pack, and the virion license.
+
+### Alternative unshaded Pockgin build
+
+`pockgin.libs.yml` retains the original unshaded mappings:
 
 ```text
 src/NhanAZ/CustomToast  -> PHP library
@@ -188,11 +202,11 @@ npm install
 node bin/pockgin.js build /path/to/CustomToastExample
 ```
 
-The finished file is `CustomToastExample/dist/CustomToastExample.phar`. The build verifier checks that both halves of the virion are present.
+The finished file is `CustomToastExample/dist/CustomToastExample.phar`. The same verifier accepts this direct build and checks that both halves of the virion are present.
 
 Do not change the Pockgin target namespace. The fixed `NhanAZ/CustomToast` path is what allows several plugins to share one runtime instead of registering duplicate resource packs.
 
-### Local development build
+### Local direct build
 
 When the two repositories are adjacent on disk, no published tag is needed:
 
@@ -208,7 +222,7 @@ Run:
 php -d phar.readonly=0 tools/build-local.php
 ```
 
-The local builder uses a temporary staging directory, injects the sibling library, creates the PHAR, verifies it, and removes the staging directory. It never writes vendored library files into the example's source tree.
+The local builder uses a temporary staging directory, injects the sibling library without shading, creates the PHAR, verifies it, and removes the staging directory. It never writes vendored library files into the example's source tree. To reproduce the release artifact instead, run DevTools with this repository as the project and the sibling CustomToast checkout inside the selected virions directory.
 
 ## Using the virion in your own plugin
 
@@ -283,7 +297,7 @@ Make sure it is one backslash followed by a lowercase `n`. Do not add spaces aro
 
 ### The build cannot resolve CustomToast
 
-The public build resolves `NhanAZ-Libraries/CustomToast` at version `1.0.0`. If no matching tag exists yet, Pockgin falls back to the repository's default branch. For a completely local build, place both repositories next to each other and use `tools/build-local.php`.
+The DevTools workflow pins an exact `NhanAZ-Libraries/CustomToast` commit and places it at `virions/CustomToast`. Keep that checkout and the `^1.0.0` requirement in `devtools.yml` compatible. For a direct local build, place both repositories next to each other and use `tools/build-local.php`.
 
 ## Version policy
 

@@ -4,36 +4,71 @@ declare(strict_types=1);
 
 $exampleRoot = dirname(__DIR__);
 $pharPath = $argv[1] ?? ($exampleRoot . "/dist/CustomToastExample.phar");
+$expectedBuildMode = $argv[2] ?? "any";
+if(!in_array($expectedBuildMode, ["any", "devtools", "direct"], true)){
+	throw new RuntimeException("Expected build mode must be any, devtools, or direct");
+}
 if(!file_exists($pharPath)){
 	throw new RuntimeException("Build artifact does not exist: " . $pharPath);
 }
 
 $phar = new Phar($pharPath);
+$entryPaths = [];
+foreach(new RecursiveIteratorIterator($phar) as $entry){
+	$path = str_replace("\\", "/", $entry->getPathname());
+	$markerPosition = strpos($path, ".phar/");
+	if($markerPosition !== false){
+		$entryPaths[] = substr($path, $markerPosition + strlen(".phar/"));
+	}
+}
+$customToastSourceRoots = [];
+foreach($entryPaths as $entryPath){
+	if(preg_match('#^(src/.+/_DevTools/CustomToast_[a-f0-9]{12})/CustomToast\.php$#', $entryPath, $matches) === 1){
+		$customToastSourceRoots[$matches[1]] = true;
+	}
+}
+if(count($customToastSourceRoots) === 1){
+	$buildMode = "devtools";
+	$customToastSourceRoot = (string) array_key_first($customToastSourceRoots);
+	$customToastResourceRoot = "resources/devtools-virions/CustomToast/CustomToast";
+}elseif(count($customToastSourceRoots) === 0 && isset($phar["src/NhanAZ/CustomToast/CustomToast.php"])){
+	$buildMode = "direct";
+	$customToastSourceRoot = "src/NhanAZ/CustomToast";
+	$customToastResourceRoot = "resources/CustomToast";
+}else{
+	throw new RuntimeException("Build must contain exactly one direct or DevTools-shaded CustomToast source root");
+}
+if($expectedBuildMode !== "any" && $buildMode !== $expectedBuildMode){
+	throw new RuntimeException("Expected a {$expectedBuildMode} build, received {$buildMode}");
+}
 $requiredEntries = [
 	"plugin.yml",
 	"src/NhanAZ/CustomToastExample/Main.php",
-	"src/NhanAZ/CustomToast/CustomToast.php",
-	"src/NhanAZ/CustomToast/CustomToastRuntime.php",
-	"src/NhanAZ/CustomToast/ResourcePackRegistrar.php",
-	"src/NhanAZ/CustomToast/ToastColor.php",
-	"src/NhanAZ/CustomToast/ToastCornerStyle.php",
-	"src/NhanAZ/CustomToast/ToastPayload.php",
-	"src/NhanAZ/CustomToast/ToastType.php",
+	"{$customToastSourceRoot}/CustomToast.php",
+	"{$customToastSourceRoot}/CustomToastRuntime.php",
+	"{$customToastSourceRoot}/ResourcePackRegistrar.php",
+	"{$customToastSourceRoot}/ToastColor.php",
+	"{$customToastSourceRoot}/ToastCornerStyle.php",
+	"{$customToastSourceRoot}/ToastPayload.php",
+	"{$customToastSourceRoot}/ToastType.php",
 	"resources/config.yml",
-	"resources/CustomToast/manifest.json",
-	"resources/CustomToast/pack_icon.png",
-	"resources/CustomToast/ui/_ui_defs.json",
-	"resources/CustomToast/ui/hud_screen.json",
-	"resources/CustomToast/ui/chat_screen.json",
-	"resources/CustomToast/textures/ui/custom_toast/background_round.png",
-	"resources/CustomToast/textures/ui/custom_toast/background_round.json",
-	"resources/CustomToast/textures/ui/custom_toast/background_square.png",
-	"resources/CustomToast/textures/ui/custom_toast/background_square.json",
-	"resources/CustomToast/textures/ui/custom_toast/icon_info.png",
-	"resources/CustomToast/textures/ui/custom_toast/icon_success.png",
-	"resources/CustomToast/textures/ui/custom_toast/icon_warning.png",
-	"resources/CustomToast/textures/ui/custom_toast/icon_error.png"
+	"{$customToastResourceRoot}/manifest.json",
+	"{$customToastResourceRoot}/pack_icon.png",
+	"{$customToastResourceRoot}/ui/_ui_defs.json",
+	"{$customToastResourceRoot}/ui/hud_screen.json",
+	"{$customToastResourceRoot}/ui/chat_screen.json",
+	"{$customToastResourceRoot}/textures/ui/custom_toast/background_round.png",
+	"{$customToastResourceRoot}/textures/ui/custom_toast/background_round.json",
+	"{$customToastResourceRoot}/textures/ui/custom_toast/background_square.png",
+	"{$customToastResourceRoot}/textures/ui/custom_toast/background_square.json",
+	"{$customToastResourceRoot}/textures/ui/custom_toast/icon_info.png",
+	"{$customToastResourceRoot}/textures/ui/custom_toast/icon_success.png",
+	"{$customToastResourceRoot}/textures/ui/custom_toast/icon_warning.png",
+	"{$customToastResourceRoot}/textures/ui/custom_toast/icon_error.png",
 ];
+if($buildMode === "devtools"){
+	$requiredEntries[] = "META-INF/virions/CustomToast/LICENSE";
+}
 
 foreach($requiredEntries as $entry){
 	if(!isset($phar[$entry])){
@@ -49,7 +84,7 @@ $colorNames = [
 ];
 foreach($colorNames as $colorName){
 	foreach(["round", "square"] as $corner){
-		$entry = "resources/CustomToast/textures/ui/custom_toast/background_{$corner}_{$colorName}.png";
+		$entry = "{$customToastResourceRoot}/textures/ui/custom_toast/background_{$corner}_{$colorName}.png";
 		if(!isset($phar[$entry])){
 			throw new RuntimeException("Build is missing palette asset: " . $entry);
 		}
@@ -75,26 +110,26 @@ if(str_contains($configYml, "corner-style:") || str_contains($configYml, "color:
 	throw new RuntimeException("Built plugin contains command-only presentation settings in config.yml");
 }
 
-$manifest = $phar["resources/CustomToast/manifest.json"]->getContent();
+$manifest = $phar["{$customToastResourceRoot}/manifest.json"]->getContent();
 if(!str_contains($manifest, '"version": [1, 0, 0]')){
 	throw new RuntimeException("Injected resource-pack version must be 1.0.0");
 }
 
-$customToastSource = $phar["src/NhanAZ/CustomToast/CustomToast.php"]->getContent();
+$customToastSource = $phar["{$customToastSourceRoot}/CustomToast.php"]->getContent();
 if(!str_contains($customToastSource, 'private const SOUND_NAME = "random.toast";')){
 	throw new RuntimeException("Injected library does not use the built-in random.toast sound event");
 }
 if(!str_contains($customToastSource, '?bool $showIcon = null') || !str_contains($customToastSource, '?string $glyph = null')){
 	throw new RuntimeException("Injected library does not expose image, iconless, and glyph modes");
 }
-$toastPayloadSource = $phar["src/NhanAZ/CustomToast/ToastPayload.php"]->getContent();
+$toastPayloadSource = $phar["{$customToastSourceRoot}/ToastPayload.php"]->getContent();
 if(!str_contains($toastPayloadSource, "normaliseMessage") || !str_contains($toastPayloadSource, 'str_replace(["\\r\\n", "\\r"], "\\n", $text)')){
 	throw new RuntimeException("Injected library does not preserve message line breaks");
 }
 if(!str_contains($toastPayloadSource, 'strtoupper($type->value)') || !str_contains($toastPayloadSource, 'mb_strlen($glyph, "UTF-8")') || !str_contains($toastPayloadSource, 'strlen($glyph) !== 3') || !str_contains($toastPayloadSource, '"§l" . $title . "§r"')){
 	throw new RuntimeException("Injected library does not encode icon modes, validate glyphs, and bold titles");
 }
-$hudSource = $phar["resources/CustomToast/ui/hud_screen.json"]->getContent();
+$hudSource = $phar["{$customToastResourceRoot}/ui/hud_screen.json"]->getContent();
 foreach(['"size": ["100%", "100%c"]', '"100%cm + 8px"', "(('§r' + #text) - ('%.12s' * #text))", "(('§r' + #text) - ('%.14s' * #text))", "(('%.14s' * #text) - ('%.11s' * #text))", '"round_without_icon@hud.custom_toast_variant"', '"round_with_glyph@hud.custom_toast_glyph_variant"', '"custom_toast_glyph_variant"', '"visible": "$toast_has_icon"', '"target_property_name": "#toast_glyph"', '"offset": [38, 0]', '"offset": "$toast_text_offset"'] as $requiredHudFragment){
 	if(!str_contains($hudSource, $requiredHudFragment)){
 		throw new RuntimeException("Injected HUD is missing a text hotfix: " . $requiredHudFragment);
@@ -108,14 +143,14 @@ if(!is_array($glyphControl) || array_key_exists("size", $glyphControl)){
 if(str_contains($hudSource, '$toast_text_prefix_length') || str_contains($hudSource, "('%.' +")){
 	throw new RuntimeException("Injected HUD contains a client-unsafe dynamic prefix formatter");
 }
-if(isset($phar["resources/CustomToast/sounds/sound_definitions.json"]) || isset($phar["resources/CustomToast/sounds/sfx/toast.ogg"])){
+if(isset($phar["{$customToastResourceRoot}/sounds/sound_definitions.json"]) || isset($phar["{$customToastResourceRoot}/sounds/sfx/toast.ogg"])){
 	throw new RuntimeException("Build contains obsolete custom sound assets");
 }
-if(isset($phar["resources/CustomToast/textures/ui/custom_toast/background.png"]) || isset($phar["resources/CustomToast/textures/ui/custom_toast/background.json"])){
+if(isset($phar["{$customToastResourceRoot}/textures/ui/custom_toast/background.png"]) || isset($phar["{$customToastResourceRoot}/textures/ui/custom_toast/background.json"])){
 	throw new RuntimeException("Build contains obsolete single-background assets");
 }
 
-if(isset($phar["src/NhanAZ/CustomToast/ToastManager.php"])){
+if(isset($phar["{$customToastSourceRoot}/ToastManager.php"])){
 	throw new RuntimeException("Obsolete prototype class was included in the build");
 }
 
@@ -126,7 +161,7 @@ $forbiddenPrototypeIconHashes = [
 	"error" => "7247782c0376c6068ca95025d3051545ca683f5ecc98caf5778640182c231435"
 ];
 foreach($forbiddenPrototypeIconHashes as $iconName => $forbiddenHash){
-	$entry = "resources/CustomToast/textures/ui/custom_toast/icon_{$iconName}.png";
+	$entry = "{$customToastResourceRoot}/textures/ui/custom_toast/icon_{$iconName}.png";
 	if(hash("sha256", $phar[$entry]->getContent()) === $forbiddenHash){
 		throw new RuntimeException("Build contains a removed prototype icon: icon_{$iconName}.png");
 	}
@@ -150,4 +185,4 @@ if(str_contains($exampleSource, "•") || !str_contains($exampleSource, "⁕")){
 	throw new RuntimeException("Toast debug labels must use the requested U+2055 flower punctuation");
 }
 
-echo "Build verification passed: PHP library and resource pack are both injected." . PHP_EOL;
+echo "Build verification passed for {$buildMode} mode: PHP library and resource pack are both injected." . PHP_EOL;

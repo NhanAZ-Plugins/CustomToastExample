@@ -6,60 +6,81 @@ on:
     tags: ["v*"]
   pull_request:
     branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: write
 
+concurrency:
+  group: build-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
+
 jobs:
   build:
-    runs-on: ubuntu-latest
+    name: Validate and build PHAR with DevTools
+    runs-on: ubuntu-24.04
+
     steps:
-      - name: Checkout
-        uses: actions/checkout@v5
+      - name: Check out CustomToastExample
+        uses: actions/checkout@v7.0.1
 
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
+      - name: Check out pinned CustomToast virion
+        uses: actions/checkout@v7.0.1
         with:
-          php-version: "8.2"
-          extensions: mbstring, zip
-          ini-values: phar.readonly=0
+          repository: NhanAZ-Libraries/CustomToast
+          ref: b0f103871c2f9a45021b0b4d568aa27525017254
+          path: virions/CustomToast
+          persist-credentials: false
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v5
+      - name: Check out PocketMine PHP setup helper
+        uses: actions/checkout@v7.0.1
         with:
-          node-version: "22"
+          repository: pmmp/setup-php-action
+          ref: 3c38c259834f945351a662392836d90eb08abff0
+          path: .devtools-dependencies/setup-php-action
+          persist-credentials: false
 
-      - name: Install Pockgin CLI
-        run: |
-          git clone https://github.com/pockgin/cli.git /tmp/pockgin-cli
-          cd /tmp/pockgin-cli
-          npm install
+      - name: Set up PocketMine PHP on Node.js 24
+        shell: bash
+        env:
+          INPUT_PHP-VERSION: "8.1"
+          INPUT_PM-VERSION-MAJOR: "5"
+          INPUT_INSTALL-PATH: ./.php-bin
+        run: node "$GITHUB_WORKSPACE/.devtools-dependencies/setup-php-action/dist/index.js"
 
       - name: Validate Composer metadata
         run: composer validate --strict --no-check-publish
 
-      - name: Lint PHP sources
+      - name: Lint plugin and verification tools
+        shell: bash
         run: find src tools -name '*.php' -print0 | xargs -0 -n1 php -l
 
-      - name: Validate plugin
-        run: node /tmp/pockgin-cli/bin/pockgin.js validate .
+      - name: Validate pinned CustomToast virion and resource pack
+        run: php virions/CustomToast/tools/validate.php
 
-      - name: Build plugin with injected CustomToast
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: node /tmp/pockgin-cli/bin/pockgin.js build .
-
-      - name: Verify injected library and resources
-        run: php tools/verify-build.php dist/CustomToastExample.phar
-
-      - name: Upload build artifact
-        uses: actions/upload-artifact@v4
+      - name: Build standalone PHAR with DevTools
+        id: build
+        uses: NhanAZ/DevTools@v0.1.0
         with:
-          name: CustomToastExample-1.0.0
-          path: dist/CustomToastExample.phar
+          project: .
+          virions: virions
+          output: build
+
+      - name: Verify shaded library and resource pack
+        env:
+          PHAR_PATH: ${{ steps.build.outputs.phar }}
+        run: php tools/verify-build.php "$PHAR_PATH" devtools
+
+      - name: Upload PHAR from this commit
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: ${{ steps.build.outputs.plugin-name }}-${{ github.sha }}
+          path: ${{ steps.build.outputs.phar }}
+          if-no-files-found: error
+          retention-days: 14
 
       - name: Publish tagged release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
-          files: dist/CustomToastExample.phar
+          files: ${{ steps.build.outputs.phar }}
