@@ -172,7 +172,7 @@ Both commands are operator-only by default.
 
 ### Recommended DevTools build
 
-This project uses [NhanAZ/DevTools](https://github.com/NhanAZ/DevTools). `devtools.yml` declares the required virion:
+This project uses [NhanAZ-Plugins/DevTools](https://github.com/NhanAZ-Plugins/DevTools). `devtools.yml` declares the required virion:
 
 ```yaml
 virions:
