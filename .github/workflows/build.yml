@@ -32,7 +32,7 @@ jobs:
           path: virions/CustomToast
           persist-credentials: false
 
-      - name: Check out Axolotl PHP setup helper
+      - name: Check out Axolotl-PM PHP setup helper
         uses: actions/checkout@v7.0.1
         with:
           repository: axolotl-pm/setup-php-action
@@ -40,7 +40,7 @@ jobs:
           path: .devtools-dependencies/setup-php-action
           persist-credentials: false
 
-      - name: Set up Axolotl PHP on Node.js 24
+      - name: Set up Axolotl-PM PHP on Node.js 24
         shell: bash
         env:
           INPUT_PHP-VERSION: "8.1"
