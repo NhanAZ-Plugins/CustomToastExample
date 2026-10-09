@@ -6,7 +6,9 @@
   "require": {
     "php": "^8.1",
     "ext-mbstring": "*",
-    "ext-zip": "*",
+    "ext-zip": "*"
+  },
+  "require-dev": {
     "pocketmine/pocketmine-mp": "^5.0.0"
   },
   "autoload": {

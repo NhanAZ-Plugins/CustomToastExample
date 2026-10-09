@@ -60,7 +60,7 @@ jobs:
 
       - name: Build standalone PHAR with DevTools
         id: build
-        uses: NhanAZ/DevTools@v1.0.0
+        uses: NhanAZ/DevTools@324e08681d7503afef223e4f82cc5d5fdef65dda
         with:
           project: .
           virions: virions
@@ -69,13 +69,18 @@ jobs:
       - name: Verify shaded library and resource pack
         env:
           PHAR_PATH: ${{ steps.build.outputs.phar }}
-        run: php tools/verify-build.php "$PHAR_PATH"
+          BUILD_METADATA: ${{ steps.build.outputs.metadata }}
+        run: |
+          php tools/verify-build.php "$PHAR_PATH"
+          cp "$BUILD_METADATA" build/devtools-build.json
 
       - name: Upload PHAR from this commit
         uses: actions/upload-artifact@v7.0.1
         with:
           name: ${{ steps.build.outputs.plugin-name }}-${{ github.sha }}
-          path: ${{ steps.build.outputs.phar }}
+          path: |
+            ${{ steps.build.outputs.phar }}
+            build/devtools-build.json
           if-no-files-found: error
           retention-days: 14
 
