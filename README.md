@@ -180,7 +180,7 @@ virions:
     version: ^1.0.1
 ```
 
-The workflow checks out CustomToast 1.0.1 at a pinned commit below `virions/CustomToast` and uses [DevTools v1.0.1](https://github.com/NhanAZ/DevTools/releases/tag/v1.0.1). DevTools shades its PHP source into a private plugin namespace, stores its resources in the protected virion resource directory, and builds the PHAR. CI runs PHPStan at level max, verifies the resulting PHAR, and uploads one artifact for each successful run. The artifact also contains `devtools-build.json`, recording the PHAR SHA-256 and dependency metadata. A release is prepared from that verified artifact after CI passes.
+The workflow checks out CustomToast 1.0.1 at a pinned commit below `virions/CustomToast` and uses [DevTools](https://github.com/NhanAZ/DevTools) at a pinned revision. DevTools shades its PHP source into a private plugin namespace, stores its resources in the protected virion resource directory, and builds the PHAR. CI runs PHPStan at level max, verifies the resulting PHAR, and uploads one artifact for each successful run. The artifact also contains `devtools-build.json`, recording the PHAR SHA-256 and dependency metadata. A release is prepared from that verified artifact after CI passes.
 
 The Composer server API package is a development dependency for IDE and analysis metadata. The running server supplies those APIs and the package is not bundled into this plugin. The runtime virion remains the pinned local CustomToast package declared in `devtools.yml`. The verified server revision is recorded by CI.
 
