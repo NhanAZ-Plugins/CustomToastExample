@@ -23,9 +23,9 @@ During folder-plugin development, multiple plugins may use the one CustomToast c
 
 ## Installation
 
-1. Open the repository's [Build workflow](https://github.com/NhanAZ-Plugins/CustomToastExample/actions/workflows/build.yml).
-2. Choose a successful run and download the `CustomToastExample-<commit SHA>` artifact.
-3. Extract `CustomToastExample.phar` and put it in your Axolotl-PM `plugins` folder.
+1. Download `CustomToastExample.phar` and `SHA256SUMS.txt` from the [v1.0.1 release](https://github.com/NhanAZ-Plugins/CustomToastExample/releases/tag/v1.0.1).
+2. Verify the PHAR checksum against `SHA256SUMS.txt`.
+3. Put `CustomToastExample.phar` in your Axolotl-PM `plugins` folder.
 4. Start the server, join it, and accept the resource pack.
 5. Use the `toast` command from the server console.
 
