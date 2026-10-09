@@ -180,7 +180,7 @@ virions:
     version: ^1.0.0
 ```
 
-The workflow checks out an exact CustomToast commit below `virions/CustomToast` and uses DevTools release `v2.0.0` through its composite Action. DevTools shades its PHP source into a private plugin namespace, stores its resources in the protected virion resource directory, verifies the resulting PHAR, and uploads exactly one artifact for every commit. That artifact also contains `devtools-build.json`, recording the PHAR SHA-256 and dependency metadata. PHPStan is intentionally off because this repository has not requested a PHPStan gate.
+The workflow checks out an exact CustomToast commit below `virions/CustomToast` and uses DevTools release `v1.0.0` through its composite Action. DevTools shades its PHP source into a private plugin namespace, stores its resources in the protected virion resource directory, verifies the resulting PHAR, and uploads exactly one artifact for every commit. That artifact also contains `devtools-build.json`, recording the PHAR SHA-256 and dependency metadata. PHPStan is intentionally off because this repository has not requested a PHPStan gate.
 
 The Composer server API package is a development dependency for IDE and analysis metadata. The running server supplies those APIs; it is never bundled into this plugin. The runtime virion remains the explicitly pinned local CustomToast package declared in `devtools.yml`. This source/PHAR build path is being verified against Axolotl; the Composer API metadata alone does not establish runtime support for another server.
 
@@ -295,3 +295,5 @@ The bundled presentation assets were created for CustomToast by NhanAZ. See the 
 ## License
 
 The PHP source is licensed under LGPL-3.0-or-later.
+
+DevTools officially launches on 2026-10-10 as a consolidated, signed `v1.0.0`. Refresh cached prelaunch tags/checkouts and old SHA pins. Earlier downloaded PHARs remain their original bytes; keep a local working copy for rollback. The launch [rollout guide](https://github.com/NhanAZ/DevTools/blob/v1.0.0/docs/org-rollout.md) explains the new source identity.
