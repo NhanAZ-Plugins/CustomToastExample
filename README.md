@@ -1,6 +1,6 @@
 # CustomToastExample
 
-CustomToastExample is an Axolotl-PM plugin that demonstrates the [CustomToast](https://github.com/NhanAZ-Libraries/CustomToast) virion. Version 1.0.1 targets Axolotl-PM 5.49.1 and PHP 8.1 or later.
+CustomToastExample is an Axolotl-PM plugin that demonstrates the [CustomToast](https://github.com/NhanAZ-Libraries/CustomToast) virion. Version 1.0.1 declares plugin API 5.0.0 and requires PHP 8.1 or later. Its exact tested server revision is pinned in the [build workflow](.github/workflows/build.yml), while broader Axolotl-PM 5.x compatibility remains unverified.
 
 The library repository is the canonical documentation. This repository stays focused on runnable examples that support those docs.
 
@@ -182,7 +182,7 @@ virions:
 
 The workflow checks out CustomToast 1.0.1 at a pinned commit below `virions/CustomToast` and uses [DevTools v1.0.1](https://github.com/NhanAZ/DevTools/releases/tag/v1.0.1). DevTools shades its PHP source into a private plugin namespace, stores its resources in the protected virion resource directory, and builds the PHAR. CI runs PHPStan at level max, verifies the resulting PHAR, and uploads one artifact for each successful run. The artifact also contains `devtools-build.json`, recording the PHAR SHA-256 and dependency metadata. A release is prepared from that verified artifact after CI passes.
 
-The Composer server API package is a development dependency for IDE and analysis metadata. The running server supplies those APIs and the package is not bundled into this plugin. The runtime virion remains the pinned local CustomToast package declared in `devtools.yml`. The verified server target is Axolotl-PM 5.49.1.
+The Composer server API package is a development dependency for IDE and analysis metadata. The running server supplies those APIs and the package is not bundled into this plugin. The runtime virion remains the pinned local CustomToast package declared in `devtools.yml`. The verified server revision is recorded by CI.
 
 The finished file inside the artifact is `CustomToastExample.phar`. It contains the plugin, the shaded CustomToast PHP library, the complete resource pack, the virion license, and its asset notice.
 
