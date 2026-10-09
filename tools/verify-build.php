@@ -30,6 +30,7 @@ $customToastSourceRoot = (string) array_key_first($customToastSourceRoots);
 $customToastResourceRoot = "resources/devtools-virions/CustomToast/CustomToast";
 $requiredEntries = [
 	"plugin.yml",
+	"LICENSE",
 	"src/NhanAZ/CustomToastExample/Main.php",
 	"{$customToastSourceRoot}/CustomToast.php",
 	"{$customToastSourceRoot}/CustomToastRuntime.php",
@@ -53,6 +54,7 @@ $requiredEntries = [
 	"{$customToastResourceRoot}/textures/ui/custom_toast/icon_warning.png",
 	"{$customToastResourceRoot}/textures/ui/custom_toast/icon_error.png",
 	"META-INF/virions/CustomToast/LICENSE",
+	"META-INF/virions/CustomToast/NOTICE.md",
 ];
 
 foreach($requiredEntries as $entry){
@@ -77,8 +79,8 @@ foreach($colorNames as $colorName){
 }
 
 $pluginYml = $phar["plugin.yml"]->getContent();
-if(preg_match('/^version:[ \t]*1\.0\.0\r?$/m', $pluginYml) !== 1){
-	throw new RuntimeException("Built plugin version must be 1.0.0");
+if(preg_match('/^version:[ \t]*1\.0\.1\r?$/m', $pluginYml) !== 1){
+	throw new RuntimeException("Built plugin version must be 1.0.1");
 }
 if(preg_match('/^  toast:\s*$/m', $pluginYml) !== 1){
 	throw new RuntimeException("Built plugin must register the toast command");
@@ -96,8 +98,23 @@ if(str_contains($configYml, "corner-style:") || str_contains($configYml, "color:
 }
 
 $manifest = $phar["{$customToastResourceRoot}/manifest.json"]->getContent();
-if(!str_contains($manifest, '"version": [1, 0, 0]')){
-	throw new RuntimeException("Injected resource-pack version must be 1.0.0");
+if(!str_contains($manifest, '"version": [1, 0, 1]')){
+	throw new RuntimeException("Injected resource-pack version must be 1.0.1");
+}
+
+$normaliseNewlines = static fn(string $text) : string => str_replace(["\r\n", "\r"], "\n", $text);
+$pluginLicense = file_get_contents($exampleRoot . "/LICENSE");
+$virionSource = $argv[2] ?? ($exampleRoot . "/virions/CustomToast");
+$virionLicense = file_get_contents($virionSource . "/LICENSE");
+$virionNotice = file_get_contents($virionSource . "/NOTICE.md");
+if($pluginLicense === false || $normaliseNewlines($phar["LICENSE"]->getContent()) !== $normaliseNewlines($pluginLicense)){
+	throw new RuntimeException("Build does not contain the plugin LGPL license text");
+}
+if($virionLicense === false || $normaliseNewlines($phar["META-INF/virions/CustomToast/LICENSE"]->getContent()) !== $normaliseNewlines($virionLicense)){
+	throw new RuntimeException("Build does not contain the CustomToast LGPL license text");
+}
+if($virionNotice === false || $normaliseNewlines($phar["META-INF/virions/CustomToast/NOTICE.md"]->getContent()) !== $normaliseNewlines($virionNotice)){
+	throw new RuntimeException("Build does not contain the CustomToast artwork notice");
 }
 
 $customToastSource = $phar["{$customToastSourceRoot}/CustomToast.php"]->getContent();

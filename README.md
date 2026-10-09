@@ -1,10 +1,10 @@
 # CustomToastExample
 
-CustomToastExample is a ready-to-run PocketMine-MP plugin that demonstrates every feature of the [CustomToast](https://github.com/NhanAZ-Libraries/CustomToast) virion.
+CustomToastExample is an Axolotl-PM plugin that demonstrates the [CustomToast](https://github.com/NhanAZ-Libraries/CustomToast) virion. Version 1.0.1 targets Axolotl-PM 5.49.1 and PHP 8.1 or later.
 
 The library repository is the canonical documentation. This repository stays focused on runnable examples that support those docs.
 
-You do not need to install the virion separately. Release builds already contain both the PHP library and its resource pack.
+You do not need to install the virion separately. Release builds contain both the PHP library and its resource pack.
 
 During folder-plugin development, multiple plugins may use the one CustomToast copy loaded from the server's `virions/CustomToast` directory. Production PHARs built by DevTools contain private shaded copies, so only one CustomToast-consuming production PHAR should run on a server.
 
@@ -25,7 +25,7 @@ During folder-plugin development, multiple plugins may use the one CustomToast c
 
 1. Open the repository's [Build workflow](https://github.com/NhanAZ-Plugins/CustomToastExample/actions/workflows/build.yml).
 2. Choose a successful run and download the `CustomToastExample-<commit SHA>` artifact.
-3. Extract `CustomToastExample.phar` and put it in your PocketMine-MP `plugins` folder.
+3. Extract `CustomToastExample.phar` and put it in your Axolotl-PM `plugins` folder.
 4. Start the server, join it, and accept the resource pack.
 5. Use the `toast` command from the server console.
 
@@ -177,14 +177,14 @@ This project uses [NhanAZ/DevTools](https://github.com/NhanAZ/DevTools). `devtoo
 ```yaml
 virions:
   - name: CustomToast
-    version: ^1.0.0
+    version: ^1.0.1
 ```
 
-The workflow checks out an exact CustomToast commit below `virions/CustomToast` and uses DevTools release `v1.0.0` through its composite Action. DevTools shades its PHP source into a private plugin namespace, stores its resources in the protected virion resource directory, verifies the resulting PHAR, and uploads exactly one artifact for every commit. That artifact also contains `devtools-build.json`, recording the PHAR SHA-256 and dependency metadata. PHPStan is intentionally off because this repository has not requested a PHPStan gate.
+The workflow checks out CustomToast 1.0.1 at a pinned commit below `virions/CustomToast` and uses [DevTools v1.0.1](https://github.com/NhanAZ/DevTools/releases/tag/v1.0.1). DevTools shades its PHP source into a private plugin namespace, stores its resources in the protected virion resource directory, and builds the PHAR. CI runs PHPStan at level max, verifies the resulting PHAR, and uploads one artifact for each successful run. The artifact also contains `devtools-build.json`, recording the PHAR SHA-256 and dependency metadata. A release is prepared from that verified artifact after CI passes.
 
-The Composer server API package is a development dependency for IDE and analysis metadata. The running server supplies those APIs; it is never bundled into this plugin. The runtime virion remains the explicitly pinned local CustomToast package declared in `devtools.yml`. This source/PHAR build path is being verified against Axolotl-PM; the Composer API metadata alone does not establish runtime support for another server.
+The Composer server API package is a development dependency for IDE and analysis metadata. The running server supplies those APIs and the package is not bundled into this plugin. The runtime virion remains the pinned local CustomToast package declared in `devtools.yml`. The verified server target is Axolotl-PM 5.49.1.
 
-The finished file inside the artifact is `CustomToastExample.phar`. It contains the plugin, the shaded CustomToast PHP library, the complete resource pack, and the virion license.
+The finished file inside the artifact is `CustomToastExample.phar`. It contains the plugin, the shaded CustomToast PHP library, the complete resource pack, the virion license, and its asset notice.
 
 ### Local DevTools development and build
 
@@ -282,11 +282,11 @@ Make sure it is one backslash followed by a lowercase `n`. Do not add spaces aro
 
 ### The build cannot resolve CustomToast
 
-The DevTools workflow pins an exact `NhanAZ-Libraries/CustomToast` commit and places it at `virions/CustomToast`. Keep that checkout and the `^1.0.0` requirement in `devtools.yml` compatible. For server development, use the same directory name below the server's `virions/` directory.
+The DevTools workflow pins an exact `NhanAZ-Libraries/CustomToast` commit and places it at `virions/CustomToast`. Keep that checkout and the `^1.0.1` requirement in `devtools.yml` compatible. For server development, use the same directory name below the server's `virions/` directory.
 
 ## Version policy
 
-The plugin, virion, and bundled resource pack are all version `1.0.0`. Do not change these versions unless the project owner explicitly requests it.
+The plugin, virion, and bundled resource pack are version `1.0.1`. Read [CHANGELOG.md](CHANGELOG.md) before updating. Stop the server before replacing the PHAR. Keep the prior PHAR for rollback and use it if the new build cannot start or its resource pack fails to load. Reconnect clients after changing resource pack versions.
 
 ## Asset notice
 
@@ -294,6 +294,6 @@ The bundled presentation assets were created for CustomToast by NhanAZ. See the 
 
 ## License
 
-The PHP source is licensed under LGPL-3.0-or-later.
+The plugin PHP source and CustomToast virion PHP source are licensed under LGPL-3.0-or-later. The bundled presentation assets have separate terms described in the virion's `ASSETS.md` and `NOTICE.md`.
 
-DevTools officially launches on 2026-10-10 as a consolidated, signed `v1.0.0`. Refresh cached prelaunch tags/checkouts and old SHA pins. Earlier downloaded PHARs remain their original bytes; keep a local working copy for rollback. The launch [rollout guide](https://github.com/NhanAZ/DevTools/blob/v1.0.0/docs/org-rollout.md) explains the new source identity.
+For bug reports and support, use [NhanAZ Discord](https://discord.gg/j2X83ujT6c) or open a GitHub issue in this repository.

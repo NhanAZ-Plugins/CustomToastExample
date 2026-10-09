@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: build-${{ github.workflow }}-${{ github.ref }}
@@ -28,8 +28,16 @@ jobs:
         uses: actions/checkout@v7.0.1
         with:
           repository: NhanAZ-Libraries/CustomToast
-          ref: f821986563f59897624b7693853371ff79225ee5
+          ref: d86ddaa803e6bf660911e7247adf462450a8b5ed
           path: virions/CustomToast
+          persist-credentials: false
+
+      - name: Check out Axolotl-PM source for PHPStan
+        uses: actions/checkout@v7.0.1
+        with:
+          repository: axolotl-pm/PocketMine-MP
+          ref: dfe0d07e48a9e8d5a4a242fa43ff1cd3b743a955
+          path: .devtools-dependencies/axolotl-pm
           persist-credentials: false
 
       - name: Check out Axolotl-PM PHP setup helper
@@ -60,18 +68,20 @@ jobs:
 
       - name: Build standalone PHAR with DevTools
         id: build
-        uses: NhanAZ/DevTools@v1.0.0
+        uses: NhanAZ/DevTools@v1.0.1
         with:
           project: .
           virions: virions
           output: build
+          phpstan: max
+          phpstan-server: .devtools-dependencies/axolotl-pm
 
       - name: Verify shaded library and resource pack
         env:
           PHAR_PATH: ${{ steps.build.outputs.phar }}
           BUILD_METADATA: ${{ steps.build.outputs.metadata }}
         run: |
-          php tools/verify-build.php "$PHAR_PATH"
+          php tools/verify-build.php "$PHAR_PATH" virions/CustomToast
           cp "$BUILD_METADATA" build/devtools-build.json
 
       - name: Upload PHAR from this commit
@@ -83,9 +93,3 @@ jobs:
             build/devtools-build.json
           if-no-files-found: error
           retention-days: 14
-
-      - name: Publish tagged release
-        if: startsWith(github.ref, 'refs/tags/v')
-        uses: softprops/action-gh-release@v2
-        with:
-          files: ${{ steps.build.outputs.phar }}
