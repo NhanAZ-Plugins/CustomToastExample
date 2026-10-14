@@ -68,7 +68,7 @@ jobs:
 
       - name: Build standalone PHAR with DevTools
         id: build
-        uses: NhanAZ/DevTools@v1.0.1
+        uses: NhanAZ/DevTools@8d13a75aaf4f330fdbd93737d58be9cacc41e262 # v1.0.15
         with:
           project: .
           virions: virions
