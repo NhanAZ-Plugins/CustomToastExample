@@ -1,12 +1,15 @@
 # CustomToastExample
 
-CustomToastExample is an Axolotl-PM plugin that demonstrates the [CustomToast](https://github.com/NhanAZ-Libraries/CustomToast) virion. Version 1.0.1 declares plugin API 5.0.0 and requires PHP 8.1 or later. Its exact tested server revision is pinned in the [build workflow](.github/workflows/build.yml), while broader Axolotl-PM 5.x compatibility remains unverified.
+Axolotl-PM example plugin for CustomToast notifications and resource pack
 
-The library repository is the canonical documentation. This repository stays focused on runnable examples that support those docs.
+[![CI](https://github.com/NhanAZ-Plugins/CustomToastExample/actions/workflows/build.yml/badge.svg)](https://github.com/NhanAZ-Plugins/CustomToastExample/actions/workflows/build.yml)
+[![Latest release](https://img.shields.io/github/v/release/NhanAZ-Plugins/CustomToastExample)](https://github.com/NhanAZ-Plugins/CustomToastExample/releases/latest)
+[![License](https://img.shields.io/github/license/NhanAZ-Plugins/CustomToastExample)](https://github.com/NhanAZ-Plugins/CustomToastExample/blob/main/LICENSE)
+[![Discord](https://img.shields.io/discord/986553214889517088?label=Discord&logo=discord&logoColor=white&color=5865F2)](https://discord.gg/j2X83ujT6c)
 
-You do not need to install the virion separately. Release builds contain both the PHP library and its resource pack.
+## Overview
 
-During folder-plugin development, multiple plugins may use the one CustomToast copy loaded from the server's `virions/CustomToast` directory. Production PHARs built by DevTools contain private shaded copies, so only one CustomToast-consuming production PHAR should run on a server.
+This example targets the PocketMine-MP and Axolotl-PM API 5 ecosystem and is maintained under [NhanAZ-Plugins](https://github.com/NhanAZ-Plugins).
 
 ## What this plugin demonstrates
 
