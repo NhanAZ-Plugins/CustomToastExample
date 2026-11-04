@@ -28,7 +28,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: NhanAZ-Libraries/CustomToast
-          ref: d86ddaa803e6bf660911e7247adf462450a8b5ed
+          ref: c0a9032
           path: virions/CustomToast
           persist-credentials: false
 
