@@ -27,7 +27,7 @@ if(count($customToastSourceRoots) !== 1){
 	throw new RuntimeException("Build must contain exactly one DevTools-shaded CustomToast source root");
 }
 $customToastSourceRoot = (string) array_key_first($customToastSourceRoots);
-$customToastResourceRoot = "resources/devtools-virions/CustomToast/CustomToast";
+$customToastResourceRoot = "{$customToastSourceRoot}/resources";
 $requiredEntries = [
 	"plugin.yml",
 	"LICENSE",
